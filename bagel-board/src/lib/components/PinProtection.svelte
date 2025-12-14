@@ -39,10 +39,10 @@
 </script>
 
 <div
-    class="fixed inset-0 bg-[#171717] z-50 flex items-center justify-center backdrop-blur-sm"
-    in:fade
+    class="fixed inset-0 bg-[#171717] z-50 flex items-center justify-center backdrop-blur-sm pointer-events-none"
+    in:fade={{ duration: 150 }}
 >
-    <div class="w-full max-w-sm p-8 flex flex-col items-center">
+    <div class="w-full max-w-sm p-8 flex flex-col items-center pointer-events-auto">
         <h1 class="text-white text-2xl font-medium mb-4 tracking-tight">
             Enter PIN
         </h1>
