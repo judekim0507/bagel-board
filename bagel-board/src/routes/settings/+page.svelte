@@ -8,14 +8,11 @@
         setAssignedTables,
     } from "$lib/utils/tableAssignment";
 
-    // shadcn-svelte components
     import { Button } from "$lib/components/ui/button/index.js";
     import * as Card from "$lib/components/ui/card/index.js";
     import * as Tabs from "$lib/components/ui/tabs/index.js";
     import { Badge } from "$lib/components/ui/badge/index.js";
     import { ScrollArea } from "$lib/components/ui/scroll-area/index.js";
-
-    // Icons
     import Settings from "lucide-svelte/icons/settings";
     import RotateCcw from "lucide-svelte/icons/rotate-ccw";
     import ExternalLink from "lucide-svelte/icons/external-link";
@@ -24,9 +21,6 @@
     import ClipboardList from "lucide-svelte/icons/clipboard-list";
     import LayoutGrid from "lucide-svelte/icons/layout-grid";
     import AlertTriangle from "lucide-svelte/icons/alert-triangle";
-    import Info from "lucide-svelte/icons/info";
-    import CheckCircle from "lucide-svelte/icons/check-circle";
-    import Bell from "lucide-svelte/icons/bell";
     import Database from "lucide-svelte/icons/database";
     import Wifi from "lucide-svelte/icons/wifi";
     import Circle from "lucide-svelte/icons/circle";
@@ -87,7 +81,6 @@
                     .select("*", { count: "exact", head: true }),
             ]);
 
-            // If we got here without errors, DB is connected
             dbConnected =
                 !orders.error && !seats.error && !teachers.error && !menu.error;
 
@@ -153,7 +146,6 @@
 </script>
 
 <div class="flex-1 flex flex-col overflow-hidden">
-    <!-- Header -->
     <header class="px-6 py-6 border-b flex-none">
         <div>
             <h1
@@ -205,10 +197,8 @@
                     </Tabs.Trigger>
                 </Tabs.List>
 
-                <!-- Overview Tab -->
                 <Tabs.Content value="overview" class="mt-0">
                     <div class="space-y-6">
-                        <!-- Stats Grid -->
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                             <Card.Root>
                                 <Card.Content class="pt-6">
@@ -268,7 +258,6 @@
                             </Card.Root>
                         </div>
 
-                        <!-- System Info -->
                         <Card.Root>
                             <Card.Header>
                                 <Card.Title class="flex items-center gap-2"
@@ -362,7 +351,6 @@
                             </Card.Content>
                         </Card.Root>
 
-                        <!-- Quick Actions -->
                         <Card.Root>
                             <Card.Header>
                                 <Card.Title>Quick Actions</Card.Title>
@@ -393,10 +381,8 @@
                     </div>
                 </Tabs.Content>
 
-                <!-- Session Tab -->
                 <Tabs.Content value="session" class="mt-0">
                     <div class="max-w-2xl space-y-6">
-                        <!-- Danger Zone -->
                         <Card.Root class="border-destructive/50">
                             <Card.Header>
                                 <Card.Title
@@ -435,63 +421,6 @@
                             </Card.Content>
                         </Card.Root>
 
-                        <!-- Guidelines -->
-                        <!-- <Card.Root>
-                            <Card.Header>
-                                <Card.Title>Session Guidelines</Card.Title>
-                            </Card.Header>
-                            <Card.Content>
-                                <ul class="space-y-2 text-sm">
-                                    <li class="flex items-center gap-2">
-                                        <CheckCircle
-                                            class="w-4 h-4 text-green-500"
-                                        />
-                                        <span class="text-muted-foreground"
-                                            >Reset the session at the end of
-                                            each meal service</span
-                                        >
-                                    </li>
-                                    <li class="flex items-center gap-2">
-                                        <CheckCircle
-                                            class="w-4 h-4 text-green-500"
-                                        />
-                                        <span class="text-muted-foreground"
-                                            >Ensure all orders are completed
-                                            before resetting</span
-                                        >
-                                    </li>
-                                    <li class="flex items-center gap-2">
-                                        <CheckCircle
-                                            class="w-4 h-4 text-green-500"
-                                        />
-                                        <span class="text-muted-foreground"
-                                            >Pre-orders are preserved for the
-                                            next check-in</span
-                                        >
-                                    </li>
-                                    <li class="flex items-center gap-2">
-                                        <AlertTriangle
-                                            class="w-4 h-4 text-orange-500"
-                                        />
-                                        <span class="text-muted-foreground"
-                                            >All active seat assignments will be
-                                            deactivated</span
-                                        >
-                                    </li>
-                                    <li class="flex items-center gap-2">
-                                        <AlertTriangle
-                                            class="w-4 h-4 text-orange-500"
-                                        />
-                                        <span class="text-muted-foreground"
-                                            >All pending/ready orders will be
-                                            marked as served</span
-                                        >
-                                    </li>
-                                </ul>
-                            </Card.Content>
-                        </Card.Root> -->
-
-                        <!-- Current Session Stats -->
                         <Card.Root>
                             <Card.Header>
                                 <Card.Title>Current Session Stats</Card.Title>
@@ -528,10 +457,8 @@
                     </div>
                 </Tabs.Content>
 
-                <!-- Pre-order Tab -->
                 <Tabs.Content value="preorder" class="mt-0">
                     <div class="max-w-2xl space-y-6">
-                        <!-- Public Access -->
                         <Card.Root>
                             <Card.Header>
                                 <Card.Title>Public Pre-order Access</Card.Title>
@@ -557,7 +484,6 @@
                             </Card.Content>
                         </Card.Root>
 
-                        <!-- How It Works -->
                         <Card.Root>
                             <Card.Header>
                                 <Card.Title>How Pre-orders Work</Card.Title>
@@ -593,59 +519,11 @@
                                 </ol>
                             </Card.Content>
                         </Card.Root>
-
-                        <!-- Pro Tips -->
-                        <!-- <Card.Root class="border-blue-500/30 bg-blue-500/5">
-                            <Card.Header>
-                                <Card.Title
-                                    class="flex items-center gap-2 text-blue-400"
-                                >
-                                    <Info class="w-5 h-5" />
-                                    Pro Tips
-                                </Card.Title>
-                            </Card.Header>
-                            <Card.Content>
-                                <ul
-                                    class="space-y-2 text-sm text-muted-foreground"
-                                >
-                                    <li class="flex items-center gap-2">
-                                        <span>📱</span>
-                                        <span
-                                            >Pre-order page works great on
-                                            mobile devices</span
-                                        >
-                                    </li>
-                                    <li class="flex items-center gap-2">
-                                        <span>🔄</span>
-                                        <span
-                                            >Pre-orders are automatically
-                                            fulfilled when loaded</span
-                                        >
-                                    </li>
-                                    <li class="flex items-center gap-2">
-                                        <span>⏰</span>
-                                        <span
-                                            >Encourage teachers to pre-order the
-                                            night before</span
-                                        >
-                                    </li>
-                                    <li class="flex items-center gap-2">
-                                        <span>✨</span>
-                                        <span
-                                            >Pre-orders include all
-                                            customizations and dietary notes</span
-                                        >
-                                    </li>
-                                </ul>
-                            </Card.Content>
-                        </Card.Root> -->
                     </div>
                 </Tabs.Content>
 
-                <!-- Tables Tab -->
                 <Tabs.Content value="tables" class="mt-0">
                     <div class="max-w-4xl space-y-6">
-                        <!-- Table Selection -->
                         <Card.Root>
                             <Card.Header>
                                 <div class="flex items-center justify-between">
@@ -708,58 +586,10 @@
                                 </div>
                             </Card.Content>
                         </Card.Root>
-
-                        <!-- Info Box -->
-                        <!-- <Card.Root class="border-blue-500/30 bg-blue-500/5">
-                            <Card.Header>
-                                <Card.Title
-                                    class="flex items-center gap-2 text-blue-400"
-                                >
-                                    <Bell class="w-5 h-5" />
-                                    How It Works
-                                </Card.Title>
-                            </Card.Header>
-                            <Card.Content>
-                                <ul
-                                    class="space-y-2 text-sm text-muted-foreground"
-                                >
-                                    <li class="flex items-center gap-2">
-                                        <span>🔔</span>
-                                        <span
-                                            >You'll only get "Order Ready"
-                                            notifications for your assigned
-                                            tables</span
-                                        >
-                                    </li>
-                                    <li class="flex items-center gap-2">
-                                        <span>👀</span>
-                                        <span
-                                            >You can still see all tables in
-                                            Waiter Mode</span
-                                        >
-                                    </li>
-                                    <li class="flex items-center gap-2">
-                                        <span>⚡</span>
-                                        <span
-                                            >If no tables are selected, you'll
-                                            receive all notifications</span
-                                        >
-                                    </li>
-                                    <li class="flex items-center gap-2">
-                                        <span>💾</span>
-                                        <span
-                                            >Your table assignments are saved
-                                            locally on this device</span
-                                        >
-                                    </li>
-                                </ul>
-                            </Card.Content>
-                        </Card.Root> -->
                     </div>
                 </Tabs.Content>
             </Tabs.Root>
 
-            <!-- Credit -->
             <p class="text-center text-xs text-muted-foreground/50 pt-8 pb-4">
                 Built by <a
                     href="https://judekim.ca"

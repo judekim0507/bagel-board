@@ -14,6 +14,7 @@ export type SeatAssignment = Database['public']['Tables']['seat_assignments']['R
 
 export const orders = writable<Order[]>([]);
 export const seatAssignments = writable<SeatAssignment[]>([]);
+export const seats = writable<Database['public']['Tables']['seats']['Row'][]>([]);
 
 let initializing: Promise<void> | null = null;
 let subscriptionsSet = false;
@@ -26,22 +27,18 @@ export function initRealtime() {
 }
 
 async function setupRealtime() {
-    // 1. Initial Load
     await Promise.all([fetchOrders(), fetchSeatAssignments(), fetchSeats()]);
 
-    // 2. Realtime Subscriptions (idempotent)
     if (subscriptionsSet) return;
     subscriptionsSet = true;
 
     supabase
         .channel('public:orders')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
-            // In a robust app we'd optimistic update or just fetch single row
-            // For simplicity, refetch all (fine for MVP)
-            fetchOrders(); 
+            fetchOrders();
         })
         .subscribe();
-        
+
     supabase
         .channel('public:seat_assignments')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'seat_assignments' }, () => {
@@ -60,9 +57,9 @@ export async function fetchOrders() {
                 menu_items (*)
             )
         `)
-        .neq('status', 'served') // Don't show served orders by default in KDS? Or filter in UI.
-        .order('created_at', { ascending: true }); // Oldest first (FIFO)
-    
+        .neq('status', 'served')
+        .order('created_at', { ascending: true });
+
     if (!error && data) {
         orders.set(data as any);
     }
@@ -78,14 +75,9 @@ export async function fetchSeatAssignments() {
         .eq('active', true);
 
     if (!error && data) {
-        console.log('🔄 Seat assignments updated:', data.length, 'active assignments');
         seatAssignments.set(data as any);
-    } else if (error) {
-        console.error('❌ Error fetching seat assignments:', error);
     }
 }
-
-export const seats = writable<Database['public']['Tables']['seats']['Row'][]>([]);
 
 export async function fetchSeats() {
     const { data, error } = await supabase.from('seats').select('*');

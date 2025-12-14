@@ -19,7 +19,6 @@
         getAssignedTables,
     } from "$lib/utils/tableAssignment";
 
-    // shadcn-svelte components
     import { Button } from "$lib/components/ui/button/index.js";
     import * as Card from "$lib/components/ui/card/index.js";
     import * as Dialog from "$lib/components/ui/dialog/index.js";
@@ -28,8 +27,6 @@
     import { Textarea } from "$lib/components/ui/textarea/index.js";
     import { Badge } from "$lib/components/ui/badge/index.js";
     import { ScrollArea } from "$lib/components/ui/scroll-area/index.js";
-
-    // Icons
     import Star from "lucide-svelte/icons/star";
     import ArrowLeft from "lucide-svelte/icons/arrow-left";
     import Check from "lucide-svelte/icons/check";
@@ -38,7 +35,6 @@
     import Users from "lucide-svelte/icons/users";
     import Search from "lucide-svelte/icons/search";
 
-    // State
     let selectedTableId: number | null = null;
     let selectedSeatId: string | null = null;
     let showTeacherModal = false;
@@ -67,7 +63,6 @@
         currentReady.forEach((o) => notifiedOrderIds.add(o.id));
     });
 
-    // Watch for ready orders and alert waiters
     $: {
         const currentReadyOrders = $orders.filter((o) => o.status === "ready");
 
@@ -93,7 +88,6 @@
         }
     }
 
-    // Sort tables - assigned first
     $: {
         const assignedTables = getAssignedTables();
         const allTables = Array.from({ length: 22 }, (_, i) => i + 1);
@@ -112,7 +106,6 @@
         }
     }
 
-    // Reactive seat teacher map
     $: {
         seatTeacherMap = new Map(
             $seatAssignments

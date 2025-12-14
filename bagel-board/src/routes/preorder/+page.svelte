@@ -5,13 +5,8 @@
     import { getDeviceId } from "$lib/utils/device";
     import OrderInterface from "$lib/components/OrderInterface.svelte";
 
-    // shadcn-svelte components
-    import { Button } from "$lib/components/ui/button/index.js";
-    import * as Avatar from "$lib/components/ui/avatar/index.js";
     import { Input } from "$lib/components/ui/input/index.js";
     import { ScrollArea } from "$lib/components/ui/scroll-area/index.js";
-
-    // Icons
     import Search from "lucide-svelte/icons/search";
     import Check from "lucide-svelte/icons/check";
     import UtensilsCrossed from "lucide-svelte/icons/utensils-crossed";
@@ -51,12 +46,10 @@
 
 <div class="h-full dark">
     {#if step === 1}
-        <!-- Teacher Selection -->
         <div
             class="h-full bg-stone-950 text-foreground flex flex-col"
             in:fade={{ duration: 150 }}
         >
-            <!-- Header -->
             <header class="px-6 pt-12 pb-8 text-center flex-none">
                 <div
                     class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 mb-4"
@@ -73,14 +66,8 @@
                 </p>
             </header>
 
-            <!-- Search -->
             <div class="px-6 pb-4 flex-none">
                 <div class="max-w-md mx-auto">
-                    <!-- <p
-                        class="text-sm font-medium text-muted-foreground mb-3 text-center"
-                    >
-                        Select your name to continue
-                    </p> -->
                     <div class="relative">
                         <Search
                             class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"
@@ -96,7 +83,6 @@
                 </div>
             </div>
 
-            <!-- Teacher List -->
             <div class="flex-1 overflow-hidden px-6 pb-6">
                 <ScrollArea class="h-full">
                     <div class="max-w-md mx-auto space-y-2">
@@ -106,13 +92,6 @@
                                        hover:border-stone-700 hover:bg-stone-800 transition-all text-left active:scale-[0.99] group cursor-pointer"
                                 onclick={() => selectTeacher(teacher)}
                             >
-                                <!-- <Avatar.Root class="h-10 w-10 flex-shrink-0">
-                                    <Avatar.Fallback
-                                        class="bg-stone-800 text-foreground font-medium"
-                                    >
-                                        {teacher.name[0]}
-                                    </Avatar.Fallback>
-                                </Avatar.Root> -->
                                 <span
                                     class="flex-1 font-medium text-foreground"
                                 >
@@ -136,7 +115,6 @@
             </div>
         </div>
     {:else if step === 2}
-        <!-- Order Interface -->
         <div class="h-full bg-card" in:fade={{ duration: 150 }}>
             <OrderInterface
                 teacher={selectedTeacher}
@@ -148,7 +126,6 @@
             />
         </div>
     {:else if step === 3}
-        <!-- Success -->
         <div
             class="h-full bg-stone-950 text-foreground flex items-center justify-center"
             in:scale={{ duration: 300, start: 0.95 }}
