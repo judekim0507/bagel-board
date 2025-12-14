@@ -39,6 +39,7 @@
         isMinimized: boolean;
     }> = [];
     let tableIds: number[] = [];
+    let seatTeacherMap = new Map();
 
     onMount(async () => {
         await initRealtime();
@@ -105,6 +106,16 @@
         }
     }
 
+    // Create a reactive map of seat ID -> teacher for better reactivity
+    $: {
+        seatTeacherMap = new Map(
+            $seatAssignments
+                .filter((a) => a.active)
+                .map((a) => [a.seat_id, a.teachers])
+        );
+        console.log('🗺️ Seat teacher map updated:', seatTeacherMap.size, 'occupied seats');
+    }
+
     // Helpers
     function getTableOccupancy(tableId: number) {
         // Get seats for this table
@@ -124,10 +135,7 @@
     }
 
     function getSeatStatus(seatId: string) {
-        const assignment = $seatAssignments.find(
-            (a) => a.seat_id === seatId && a.active,
-        );
-        return assignment ? assignment.teachers : null;
+        return seatTeacherMap.get(seatId) || null;
     }
 
     function hasReadyOrder(seatId: string) {
@@ -155,6 +163,41 @@
         } else {
             // Seat is empty - open teacher assignment modal
             showTeacherModal = true;
+        }
+    }
+
+    async function handleCheckout() {
+        if (!selectedSeatId || !selectedTeacher) return;
+
+        const confirmed = confirm(
+            `Check out ${selectedTeacher.name}? This will remove them from this seat.`,
+        );
+
+        if (!confirmed) return;
+
+        const res = await fetch("/api/seats/assign", {
+            method: "POST",
+            body: JSON.stringify({
+                seat_id: selectedSeatId,
+                teacher_id: selectedTeacher.id,
+                device_id: getDeviceId(),
+                active: false,
+            }),
+        });
+
+        if (res.ok) {
+            toast.success(`${selectedTeacher.name} checked out!`);
+            console.log('✅ Checkout successful, refreshing seat assignments...');
+
+            // REFRESH from database - simple and reliable
+            await fetchSeatAssignments();
+
+            // Close modal and reset
+            showOrderModal = false;
+            selectedTeacher = null;
+            selectedSeatId = null;
+        } else {
+            toast.error("Failed to check out");
         }
     }
 
@@ -196,14 +239,10 @@
         showTeacherModal = false;
         editingDietary = false;
         toast.success(`${teacher.name} checked in!`);
+        console.log('✅ Check-in successful, refreshing seat assignments...');
 
-        // Update store immediately with full teacher data
-        seatAssignments.update((assignments) => {
-            const filtered = assignments.filter(
-                (a) => a.seat_id !== selectedSeatId,
-            );
-            return [...filtered, { ...data, teachers: teacher }];
-        });
+        // REFRESH from database - simple and reliable
+        await fetchSeatAssignments();
 
         // Check for pre-orders
         const preOrderRes = await fetch(
@@ -372,12 +411,13 @@
                         >
 
                         <!-- Seats around the table -->
-                        {#each $seats
-                            .filter((s) => s.table_id === selectedTableId)
-                            .sort((a, b) => a.position - b.position) as seat, i (seat.id)}
-                            {@const teacher = getSeatStatus(seat.id)}
-                            {@const ready = hasReadyOrder(seat.id)}
-                            {@const angle = (i * 360) / 8 - 90}
+                        {#key seatTeacherMap}
+                            {#each $seats
+                                .filter((s) => s.table_id === selectedTableId)
+                                .sort((a, b) => a.position - b.position) as seat, i (seat.id)}
+                                {@const teacher = getSeatStatus(seat.id)}
+                                {@const ready = hasReadyOrder(seat.id)}
+                                {@const angle = (i * 360) / 8 - 90}
 
                             <button
                                 class="absolute w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center shadow-lg transition-transform active:scale-90 border-4 z-10"
@@ -413,7 +453,8 @@
                                     >
                                 {/if}
                             </button>
-                        {/each}
+                            {/each}
+                        {/key}
                     </div>
                 </div>
             {/if}
@@ -559,6 +600,7 @@
                 selectedSeatId = null;
                 selectedTableId = null;
             }}
+            on:checkout={handleCheckout}
         />
     </div>
 {/if}

@@ -5,14 +5,29 @@ import { supabase } from '$lib/supabase'; // Using the client-side one for now, 
 // TODO: Upgrade to service key for robust security later.
 
 export async function POST({ request }) {
-    const { seat_id, teacher_id, device_id } = await request.json();
+    const { seat_id, teacher_id, device_id, active = true } = await request.json();
 
     if (!seat_id || !teacher_id) {
         return json({ error: 'Missing seat_id or teacher_id' }, { status: 400 });
     }
 
+    // If checking out (active: false), just deactivate the assignment
+    if (active === false) {
+        const { error } = await supabase
+            .from('seat_assignments')
+            .update({ active: false })
+            .eq('seat_id', seat_id)
+            .eq('teacher_id', teacher_id)
+            .eq('active', true);
+
+        if (error) {
+            return json({ error: error.message }, { status: 500 });
+        }
+
+        return json({ success: true });
+    }
+
     // 1. Deactivate existing assignments for this seat
-    // Note: We might want to keep history? Yes, we just set active=false.
     await supabase
         .from('seat_assignments')
         .update({ active: false })

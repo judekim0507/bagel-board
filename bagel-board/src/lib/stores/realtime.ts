@@ -76,9 +76,12 @@ export async function fetchSeatAssignments() {
             teachers (*)
         `)
         .eq('active', true);
-        
+
     if (!error && data) {
+        console.log('🔄 Seat assignments updated:', data.length, 'active assignments');
         seatAssignments.set(data as any);
+    } else if (error) {
+        console.error('❌ Error fetching seat assignments:', error);
     }
 }
 
