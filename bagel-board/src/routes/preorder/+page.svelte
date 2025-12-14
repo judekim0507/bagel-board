@@ -75,13 +75,6 @@
                                 <p class="font-bold text-white text-xl">
                                     {teacher.name}
                                 </p>
-                                {#if teacher.dietary_notes}
-                                    <p
-                                        class="text-sm text-orange-400 bg-orange-500/20 inline-block px-2 py-0.5 rounded mt-1"
-                                    >
-                                        {teacher.dietary_notes}
-                                    </p>
-                                {/if}
                             </div>
                         </button>
                     {/each}

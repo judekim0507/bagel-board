@@ -19,6 +19,7 @@
     let showCustomizeModal = false;
     let customizeToppings: string[] = [];
     let customizeNotes = "";
+    let dietaryNotes = teacher?.dietary_notes || "";
 
     onMount(() => {
         fetchMenu();
@@ -74,6 +75,7 @@
                 teacher_id: teacher.id,
                 device_id: deviceId,
                 items: cart,
+                dietary_notes: dietaryNotes,
             }
             : {
                 teacher_id: teacher.id,
@@ -111,18 +113,9 @@
     <div
         class="px-6 py-4 border-b border-zinc-800 bg-zinc-900 flex justify-between items-center flex-none"
     >
-        <div>
+        <div class="flex-1">
             <h2 class="text-xl font-bold">{headerTitle}</h2>
-            <div class="flex items-center gap-2">
-                <p class="text-zinc-400 text-sm">For {teacher.name}</p>
-                {#if teacher.dietary_notes}
-                    <span
-                        class="text-xs bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded-full"
-                    >
-                        {teacher.dietary_notes}
-                    </span>
-                {/if}
-            </div>
+            <p class="text-zinc-400 text-sm">For {teacher.name}</p>
         </div>
         <div class="flex items-center gap-2">
             {#if mode === "preorder"}
@@ -189,6 +182,21 @@
             <div class="p-4 border-b border-zinc-700">
                 <h3 class="font-bold">Current Order ({cart.length} items)</h3>
             </div>
+
+            {#if mode === "preorder"}
+                <!-- Dietary Requirements Input (Preorder only) -->
+                <div class="p-4 border-b border-zinc-700 bg-zinc-800">
+                    <label class="block text-sm font-medium mb-2 text-zinc-300">
+                        Dietary Requirements
+                    </label>
+                    <input
+                        type="text"
+                        bind:value={dietaryNotes}
+                        placeholder="e.g., Vegetarian, Gluten-free, Nut allergy..."
+                        class="w-full px-3 py-2 rounded-lg bg-zinc-900 text-white border border-zinc-700 focus:outline-none focus:border-orange-500 text-sm"
+                    />
+                </div>
+            {/if}
 
             <div
                 class="flex-1 overflow-y-auto p-4 flex flex-col gap-2 custom-scrollbar"

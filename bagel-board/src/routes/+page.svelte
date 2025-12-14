@@ -16,7 +16,10 @@
     import ReadyOrderPanel from "$lib/components/ReadyOrderPanel.svelte";
     import { toast } from "svelte-sonner";
     import { supabase } from "$lib/supabase";
-    import { isTableAssigned, getAssignedTables } from "$lib/utils/tableAssignment";
+    import {
+        isTableAssigned,
+        getAssignedTables,
+    } from "$lib/utils/tableAssignment";
 
     // State
     let selectedTableId: number | null = null;
@@ -29,7 +32,12 @@
     let editingDietary = false;
     let dietaryNotes = "";
     let notifiedOrderIds = new Set<string>();
-    let readyOrderPanels: Array<{ order: any; seat: any; teacher: any; isMinimized: boolean }> = [];
+    let readyOrderPanels: Array<{
+        order: any;
+        seat: any;
+        teacher: any;
+        isMinimized: boolean;
+    }> = [];
     let tableIds: number[] = [];
 
     onMount(async () => {
@@ -38,21 +46,23 @@
         loading = false;
 
         // Initialize with current ready orders to avoid showing old notifications
-        const currentReady = $orders.filter(o => o.status === "ready");
-        currentReady.forEach(o => notifiedOrderIds.add(o.id));
+        const currentReady = $orders.filter((o) => o.status === "ready");
+        currentReady.forEach((o) => notifiedOrderIds.add(o.id));
     });
 
     // Watch for ready orders and alert waiters
     $: {
-        const currentReadyOrders = $orders.filter(o => o.status === "ready");
+        const currentReadyOrders = $orders.filter((o) => o.status === "ready");
 
         // Check for NEW ready orders we haven't notified about yet
         for (const order of currentReadyOrders) {
             if (!notifiedOrderIds.has(order.id)) {
                 notifiedOrderIds.add(order.id);
 
-                const seat = $seats.find(s => s.id === order.seat_id);
-                const teacher = $teachers.find(t => t.id === order.teacher_id);
+                const seat = $seats.find((s) => s.id === order.seat_id);
+                const teacher = $teachers.find(
+                    (t) => t.id === order.teacher_id,
+                );
 
                 // Only show notification if this table is assigned to the waiter
                 if (seat && isTableAssigned(seat.table_id)) {
@@ -61,9 +71,15 @@
                     audio.play().catch(() => {});
 
                     // Add to panels array (not minimized initially)
-                    readyOrderPanels = [...readyOrderPanels, { order, seat, teacher, isMinimized: false }];
+                    readyOrderPanels = [
+                        ...readyOrderPanels,
+                        { order, seat, teacher, isMinimized: false },
+                    ];
 
-                    console.log("🔔 Notification triggered for table", seat.table_id);
+                    console.log(
+                        "🔔 Notification triggered for table",
+                        seat.table_id,
+                    );
                 }
             }
         }
@@ -79,8 +95,12 @@
         } else {
             // Sort: assigned tables first, then rest
             tableIds = [
-                ...allTables.filter(id => assignedTables.includes(id)).sort((a, b) => a - b),
-                ...allTables.filter(id => !assignedTables.includes(id)).sort((a, b) => a - b)
+                ...allTables
+                    .filter((id) => assignedTables.includes(id))
+                    .sort((a, b) => a - b),
+                ...allTables
+                    .filter((id) => !assignedTables.includes(id))
+                    .sort((a, b) => a - b),
             ];
         }
     }
@@ -178,8 +198,10 @@
         toast.success(`${teacher.name} checked in!`);
 
         // Update store immediately with full teacher data
-        seatAssignments.update(assignments => {
-            const filtered = assignments.filter(a => a.seat_id !== selectedSeatId);
+        seatAssignments.update((assignments) => {
+            const filtered = assignments.filter(
+                (a) => a.seat_id !== selectedSeatId,
+            );
             return [...filtered, { ...data, teachers: teacher }];
         });
 
@@ -220,6 +242,12 @@
                         method: "POST",
                     });
                     toast.success("Pre-order loaded and sent to kitchen!");
+
+                    // Close modals but KEEP table/seat selected so user can see the update
+                    showTeacherModal = false;
+                    selectedTeacher = null;
+                    editingDietary = false;
+                    // DON'T clear selectedTableId or selectedSeatId - stay on table view
                     return;
                 }
             }
@@ -295,10 +323,6 @@
                         <button
                             class="aspect-square rounded-3xl flex flex-col items-center justify-center relative transition-all active:scale-95 group bg-white hover:bg-zinc-50 shadow-sm text-zinc-800 border-2 border-transparent"
                             class:!border-orange-500={status.hasAnyone}
-                            class:ring-2={isAssigned}
-                            class:ring-blue-500={isAssigned}
-                            class:ring-offset-2={isAssigned}
-                            class:ring-offset-zinc-200={isAssigned}
                             on:click={() => handleTableClick(id)}
                         >
                             <span class="text-3xl font-bold mb-1">{id}</span>
@@ -310,8 +334,17 @@
 
                             {#if isAssigned}
                                 <div class="absolute top-2 left-2">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 text-blue-500">
-                                        <path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" />
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 24 24"
+                                        fill="currentColor"
+                                        class="w-5 h-5 text-blue-500"
+                                    >
+                                        <path
+                                            fill-rule="evenodd"
+                                            d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z"
+                                            clip-rule="evenodd"
+                                        />
                                     </svg>
                                 </div>
                             {/if}
@@ -361,17 +394,23 @@
                                 on:click={() => handleSeatClick(seat.id)}
                             >
                                 {#if ready}
-                                    <div class="absolute -top-1 -right-1 w-6 h-6 bg-green-400 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg animate-pulse">
+                                    <div
+                                        class="absolute -top-1 -right-1 w-6 h-6 bg-green-400 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg animate-pulse"
+                                    >
                                         ✓
                                     </div>
                                 {/if}
                                 {#if teacher}
-                                    <div class="text-center leading-tight text-xs font-bold px-1">
-                                        {teacher.name.split(" ")[0]}<br/>
+                                    <div
+                                        class="text-center leading-tight text-xs font-bold px-1"
+                                    >
+                                        {teacher.name.split(" ")[0]}<br />
                                         {teacher.name.split(" ")[1]?.[0] || ""}
                                     </div>
                                 {:else}
-                                    <span class="text-xl font-bold opacity-30">{seat.position}</span>
+                                    <span class="text-xl font-bold opacity-30"
+                                        >{seat.position}</span
+                                    >
                                 {/if}
                             </button>
                         {/each}
@@ -384,7 +423,13 @@
 
 <!-- Teacher Selection Modal -->
 {#if showTeacherModal}
-    <Modal title={editingDietary ? "Dietary Requirements" : "Assign Seat"} on:close={() => { showTeacherModal = false; editingDietary = false; }}>
+    <Modal
+        title={editingDietary ? "Dietary Requirements" : "Assign Seat"}
+        on:close={() => {
+            showTeacherModal = false;
+            editingDietary = false;
+        }}
+    >
         <div class="flex flex-col gap-4 min-w-[300px]">
             {#if !editingDietary}
                 <input
@@ -397,9 +442,13 @@
 
                 <div class="flex flex-col gap-2 max-h-[300px] overflow-y-auto">
                     {#each filteredTeachers as teacher}
-                        {@const alreadyCheckedIn = $seatAssignments.some(a => a.teacher_id === teacher.id && a.active)}
+                        {@const alreadyCheckedIn = $seatAssignments.some(
+                            (a) => a.teacher_id === teacher.id && a.active,
+                        )}
                         <button
-                            class="flex items-center gap-3 p-3 rounded-xl transition-colors text-left {alreadyCheckedIn ? 'opacity-50 cursor-not-allowed' : 'hover:bg-zinc-800'}"
+                            class="flex items-center gap-3 p-3 rounded-xl transition-colors text-left {alreadyCheckedIn
+                                ? 'opacity-50 cursor-not-allowed'
+                                : 'hover:bg-zinc-800'}"
                             disabled={alreadyCheckedIn}
                             on:click={() => {
                                 if (alreadyCheckedIn) return;
@@ -414,9 +463,13 @@
                                 {teacher.name[0]}
                             </div>
                             <div class="flex-1">
-                                <p class="font-bold text-white">{teacher.name}</p>
+                                <p class="font-bold text-white">
+                                    {teacher.name}
+                                </p>
                                 {#if alreadyCheckedIn}
-                                    <p class="text-xs text-green-400">✓ Already checked in</p>
+                                    <p class="text-xs text-green-400">
+                                        ✓ Already checked in
+                                    </p>
                                 {:else if teacher.dietary_notes}
                                     <p class="text-xs text-orange-400">
                                         {teacher.dietary_notes}
@@ -435,8 +488,12 @@
             {:else}
                 <div class="flex flex-col gap-4">
                     <div>
-                        <p class="text-white font-bold mb-1">Teacher: {selectedTeacher.name}</p>
-                        <p class="text-zinc-400 text-sm">Add or update dietary requirements</p>
+                        <p class="text-white font-bold mb-1">
+                            Teacher: {selectedTeacher.name}
+                        </p>
+                        <p class="text-zinc-400 text-sm">
+                            Add or update dietary requirements
+                        </p>
                     </div>
 
                     <div class="flex flex-wrap gap-2">
@@ -445,7 +502,8 @@
                                 class="px-3 py-1.5 bg-zinc-800 hover:bg-orange-500 text-zinc-300 hover:text-white text-xs rounded-full transition-colors border border-zinc-700 hover:border-orange-500"
                                 on:click={() => {
                                     if (dietaryNotes.trim()) {
-                                        dietaryNotes = dietaryNotes.trim() + ", " + option;
+                                        dietaryNotes =
+                                            dietaryNotes.trim() + ", " + option;
                                     } else {
                                         dietaryNotes = option;
                                     }
@@ -465,7 +523,10 @@
                     <div class="flex gap-2">
                         <button
                             class="flex-1 px-4 py-3 bg-zinc-700 hover:bg-zinc-600 rounded-xl text-white font-bold transition-colors"
-                            on:click={() => { editingDietary = false; selectedTeacher = null; }}
+                            on:click={() => {
+                                editingDietary = false;
+                                selectedTeacher = null;
+                            }}
                         >
                             Back
                         </button>
@@ -509,7 +570,9 @@
         seat={panel.seat}
         teacher={panel.teacher}
         isMinimized={panel.isMinimized}
-        stackIndex={readyOrderPanels.filter(p => p.isMinimized).findIndex(p => p.order.id === panel.order.id)}
+        stackIndex={readyOrderPanels
+            .filter((p) => p.isMinimized)
+            .findIndex((p) => p.order.id === panel.order.id)}
         on:minimize={() => {
             readyOrderPanels[index].isMinimized = true;
             readyOrderPanels = readyOrderPanels;
@@ -524,14 +587,16 @@
                 method: "POST",
                 body: JSON.stringify({
                     order_id: panel.order.id,
-                    status: "served"
+                    status: "served",
                 }),
             });
 
             if (res.ok) {
                 toast.success("Order completed!");
                 // Remove this panel from the array
-                readyOrderPanels = readyOrderPanels.filter((_, i) => i !== index);
+                readyOrderPanels = readyOrderPanels.filter(
+                    (_, i) => i !== index,
+                );
             } else {
                 toast.error("Failed to update order");
             }
