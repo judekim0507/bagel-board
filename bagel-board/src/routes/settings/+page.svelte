@@ -2,11 +2,31 @@
     import { supabase } from "$lib/supabase";
     import { logout } from "$lib/stores/auth";
     import { toast } from "svelte-sonner";
-    import { fade } from "svelte/transition";
     import { onMount } from "svelte";
     import { getAssignedTables, setAssignedTables } from "$lib/utils/tableAssignment";
 
-    let activeTab = "overview";
+    // shadcn-svelte components
+    import { Button } from "$lib/components/ui/button/index.js";
+    import * as Card from "$lib/components/ui/card/index.js";
+    import * as Tabs from "$lib/components/ui/tabs/index.js";
+    import { Badge } from "$lib/components/ui/badge/index.js";
+    import { ScrollArea } from "$lib/components/ui/scroll-area/index.js";
+
+    // Icons
+    import Settings from "lucide-svelte/icons/settings";
+    import RotateCcw from "lucide-svelte/icons/rotate-ccw";
+    import ExternalLink from "lucide-svelte/icons/external-link";
+    import Lock from "lucide-svelte/icons/lock";
+    import RefreshCw from "lucide-svelte/icons/refresh-cw";
+    import ClipboardList from "lucide-svelte/icons/clipboard-list";
+    import LayoutGrid from "lucide-svelte/icons/layout-grid";
+    import AlertTriangle from "lucide-svelte/icons/alert-triangle";
+    import Info from "lucide-svelte/icons/info";
+    import CheckCircle from "lucide-svelte/icons/check-circle";
+    import Bell from "lucide-svelte/icons/bell";
+    import Database from "lucide-svelte/icons/database";
+    import Wifi from "lucide-svelte/icons/wifi";
+
     let assignedTables: number[] = [];
     let stats = {
         todayOrders: 0,
@@ -53,13 +73,11 @@
 
         if (!confirmed) return;
 
-        // Deactivate all seat assignments
         await supabase
             .from("seat_assignments")
             .update({ active: false })
             .eq("active", true);
 
-        // Mark all orders as served
         await supabase
             .from("orders")
             .update({ status: "served" })
@@ -98,318 +116,365 @@
     }
 </script>
 
-<div class="flex-1 p-6 overflow-auto bg-zinc-900 text-white">
-    <header class="mb-6">
-        <h1 class="text-3xl font-bold">Settings & Admin</h1>
-        <p class="text-zinc-500 text-sm">Manage system settings and data</p>
+<div class="flex-1 flex flex-col overflow-hidden bg-background">
+    <!-- Header -->
+    <header class="px-6 py-4 border-b flex-none">
+        <div class="flex items-center gap-3">
+            <Settings class="w-6 h-6 text-muted-foreground" />
+            <div>
+                <h1 class="text-2xl font-semibold">Settings</h1>
+                <p class="text-sm text-muted-foreground">Manage system settings and data</p>
+            </div>
+        </div>
     </header>
 
-    <!-- Tabs -->
-    <div class="flex gap-2 mb-6 border-b border-zinc-800">
-        <button
-            class="px-6 py-3 font-medium transition-colors {activeTab ===
-            'overview'
-                ? 'text-orange-400 border-b-2 border-orange-400'
-                : 'text-zinc-500 hover:text-zinc-300'}"
-            on:click={() => (activeTab = "overview")}
-        >
-            Overview
-        </button>
-        <button
-            class="px-6 py-3 font-medium transition-colors {activeTab ===
-            'session'
-                ? 'text-orange-400 border-b-2 border-orange-400'
-                : 'text-zinc-500 hover:text-zinc-300'}"
-            on:click={() => (activeTab = "session")}
-        >
-            Session Management
-        </button>
-        <button
-            class="px-6 py-3 font-medium transition-colors {activeTab ===
-            'preorder'
-                ? 'text-orange-400 border-b-2 border-orange-400'
-                : 'text-zinc-500 hover:text-zinc-300'}"
-            on:click={() => (activeTab = "preorder")}
-        >
-            Pre-order Mode
-        </button>
-        <button
-            class="px-6 py-3 font-medium transition-colors {activeTab ===
-            'tables'
-                ? 'text-orange-400 border-b-2 border-orange-400'
-                : 'text-zinc-500 hover:text-zinc-300'}"
-            on:click={() => (activeTab = "tables")}
-        >
-            My Tables
-        </button>
-    </div>
-
-    <!-- Tab Content -->
-    {#if activeTab === "overview"}
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8" in:fade>
-            <div class="bg-zinc-800 rounded-2xl p-6 border border-zinc-700">
-                <div class="text-zinc-400 text-sm mb-2">Today's Orders</div>
-                <div class="text-4xl font-bold text-orange-400">
-                    {stats.todayOrders}
-                </div>
-            </div>
-            <div class="bg-zinc-800 rounded-2xl p-6 border border-zinc-700">
-                <div class="text-zinc-400 text-sm mb-2">Active Seats</div>
-                <div class="text-4xl font-bold text-green-400">
-                    {stats.activeSeats}
-                </div>
-            </div>
-            <div class="bg-zinc-800 rounded-2xl p-6 border border-zinc-700">
-                <div class="text-zinc-400 text-sm mb-2">Total Teachers</div>
-                <div class="text-4xl font-bold text-blue-400">
-                    {stats.totalTeachers}
-                </div>
-            </div>
-            <div class="bg-zinc-800 rounded-2xl p-6 border border-zinc-700">
-                <div class="text-zinc-400 text-sm mb-2">Menu Items</div>
-                <div class="text-4xl font-bold text-purple-400">
-                    {stats.totalMenuItems}
-                </div>
-            </div>
-        </div>
-
-        <div class="space-y-4" in:fade>
-            <div class="bg-zinc-800 rounded-2xl p-6 border border-zinc-700">
-                <h3 class="text-xl font-bold mb-2">System Information</h3>
-                <p class="text-zinc-400 text-sm mb-4">
-                    Bagel Board v1.0 • Built with SvelteKit & Supabase
-                </p>
-                <div class="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                        <span class="text-zinc-500">Database:</span>
-                        <span class="text-white ml-2">Connected</span>
-                    </div>
-                    <div>
-                        <span class="text-zinc-500">Real-time:</span>
-                        <span class="text-green-400 ml-2">Active</span>
-                    </div>
-                    <div>
-                        <span class="text-zinc-500">Tables:</span>
-                        <span class="text-white ml-2">22</span>
-                    </div>
-                    <div>
-                        <span class="text-zinc-500">Total Seats:</span>
-                        <span class="text-white ml-2">176</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-zinc-800 rounded-2xl p-6 border border-zinc-700">
-                <h3 class="text-xl font-bold mb-2">Quick Actions</h3>
-                <div class="flex flex-wrap gap-3">
-                    <a
-                        href="/preorder"
-                        class="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl transition-colors font-medium"
+    <ScrollArea class="flex-1">
+        <div class="p-6">
+            <Tabs.Root value="overview" class="w-full">
+                <Tabs.List class="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent mb-6">
+                    <Tabs.Trigger
+                        value="overview"
+                        class="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-3"
                     >
-                        Open Pre-order Mode
-                    </a>
-                    <button
-                        on:click={loadStats}
-                        class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-colors font-medium"
+                        Overview
+                    </Tabs.Trigger>
+                    <Tabs.Trigger
+                        value="session"
+                        class="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-3"
                     >
-                        Refresh Stats
-                    </button>
-                    <button
-                        on:click={handleLogout}
-                        class="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-white rounded-xl transition-colors font-medium"
+                        Session
+                    </Tabs.Trigger>
+                    <Tabs.Trigger
+                        value="preorder"
+                        class="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-3"
                     >
-                        Lock App
-                    </button>
-                </div>
-            </div>
-        </div>
-    {:else if activeTab === "session"}
-        <div class="max-w-2xl space-y-4" in:fade>
-            <div
-                class="bg-red-900/20 border-2 border-red-500/50 rounded-2xl p-6"
-            >
-                <h3 class="text-xl font-bold mb-2 text-red-400">
-                    🔄 Reset Daily Session
-                </h3>
-                <p class="text-zinc-300 mb-4">
-                    This will check out all teachers, mark all orders as served,
-                    and prepare the system for a new meal service.
-                </p>
-                <p class="text-sm text-zinc-500 mb-6">
-                    <strong>Warning:</strong> This action cannot be undone. Use this
-                    at the end of each meal service.
-                </p>
-                <button
-                    on:click={resetSession}
-                    class="px-6 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl transition-colors font-bold"
-                >
-                    Reset Session
-                </button>
-            </div>
+                        Pre-order
+                    </Tabs.Trigger>
+                    <Tabs.Trigger
+                        value="tables"
+                        class="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-3"
+                    >
+                        My Tables
+                    </Tabs.Trigger>
+                </Tabs.List>
 
-            <div class="bg-zinc-800 rounded-2xl p-6 border border-zinc-700">
-                <h3 class="text-xl font-bold mb-2">Session Guidelines</h3>
-                <ul class="space-y-2 text-zinc-400 text-sm">
-                    <li>✅ Reset the session at the end of each meal service</li>
-                    <li>✅ Ensure all orders are completed before resetting</li>
-                    <li>
-                        ✅ Pre-orders are preserved and will be available for the
-                        next check-in
-                    </li>
-                    <li>
-                        ⚠️ All active seat assignments will be deactivated
-                    </li>
-                    <li>⚠️ All pending/ready orders will be marked as served</li>
-                </ul>
-            </div>
-
-            <div class="bg-zinc-800 rounded-2xl p-6 border border-zinc-700">
-                <h3 class="text-xl font-bold mb-2">Current Session Stats</h3>
-                <div class="grid grid-cols-2 gap-4 text-sm">
-                    <div class="bg-zinc-900 p-4 rounded-lg">
-                        <div class="text-zinc-500 mb-1">Active Assignments</div>
-                        <div class="text-2xl font-bold text-green-400">
-                            {stats.activeSeats}
+                <!-- Overview Tab -->
+                <Tabs.Content value="overview" class="mt-0">
+                    <div class="space-y-6">
+                        <!-- Stats Grid -->
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <Card.Root>
+                                <Card.Content class="pt-6">
+                                    <p class="text-sm text-muted-foreground mb-1">Today's Orders</p>
+                                    <p class="text-4xl font-bold text-orange-500">{stats.todayOrders}</p>
+                                </Card.Content>
+                            </Card.Root>
+                            <Card.Root>
+                                <Card.Content class="pt-6">
+                                    <p class="text-sm text-muted-foreground mb-1">Active Seats</p>
+                                    <p class="text-4xl font-bold text-green-500">{stats.activeSeats}</p>
+                                </Card.Content>
+                            </Card.Root>
+                            <Card.Root>
+                                <Card.Content class="pt-6">
+                                    <p class="text-sm text-muted-foreground mb-1">Total Teachers</p>
+                                    <p class="text-4xl font-bold text-blue-500">{stats.totalTeachers}</p>
+                                </Card.Content>
+                            </Card.Root>
+                            <Card.Root>
+                                <Card.Content class="pt-6">
+                                    <p class="text-sm text-muted-foreground mb-1">Menu Items</p>
+                                    <p class="text-4xl font-bold text-purple-500">{stats.totalMenuItems}</p>
+                                </Card.Content>
+                            </Card.Root>
                         </div>
+
+                        <!-- System Info -->
+                        <Card.Root>
+                            <Card.Header>
+                                <Card.Title>System Information</Card.Title>
+                                <Card.Description>Bagel Board v1.0 • Built with SvelteKit & Supabase</Card.Description>
+                            </Card.Header>
+                            <Card.Content>
+                                <div class="grid grid-cols-2 gap-4 text-sm">
+                                    <div class="flex items-center gap-2">
+                                        <Database class="w-4 h-4 text-muted-foreground" />
+                                        <span class="text-muted-foreground">Database:</span>
+                                        <Badge variant="outline" class="text-green-500 border-green-500/50">Connected</Badge>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <Wifi class="w-4 h-4 text-muted-foreground" />
+                                        <span class="text-muted-foreground">Real-time:</span>
+                                        <Badge variant="outline" class="text-green-500 border-green-500/50">Active</Badge>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <LayoutGrid class="w-4 h-4 text-muted-foreground" />
+                                        <span class="text-muted-foreground">Tables:</span>
+                                        <span class="text-foreground font-medium">22</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <ClipboardList class="w-4 h-4 text-muted-foreground" />
+                                        <span class="text-muted-foreground">Total Seats:</span>
+                                        <span class="text-foreground font-medium">176</span>
+                                    </div>
+                                </div>
+                            </Card.Content>
+                        </Card.Root>
+
+                        <!-- Quick Actions -->
+                        <Card.Root>
+                            <Card.Header>
+                                <Card.Title>Quick Actions</Card.Title>
+                            </Card.Header>
+                            <Card.Content>
+                                <div class="flex flex-wrap gap-3">
+                                    <Button variant="default" href="/preorder">
+                                        <ExternalLink class="w-4 h-4 mr-2" />
+                                        Open Pre-order Mode
+                                    </Button>
+                                    <Button variant="secondary" onclick={() => loadStats()}>
+                                        <RefreshCw class="w-4 h-4 mr-2" />
+                                        Refresh Stats
+                                    </Button>
+                                    <Button variant="outline" onclick={handleLogout}>
+                                        <Lock class="w-4 h-4 mr-2" />
+                                        Lock App
+                                    </Button>
+                                </div>
+                            </Card.Content>
+                        </Card.Root>
                     </div>
-                    <div class="bg-zinc-900 p-4 rounded-lg">
-                        <div class="text-zinc-500 mb-1">Orders Today</div>
-                        <div class="text-2xl font-bold text-orange-400">
-                            {stats.todayOrders}
-                        </div>
+                </Tabs.Content>
+
+                <!-- Session Tab -->
+                <Tabs.Content value="session" class="mt-0">
+                    <div class="max-w-2xl space-y-6">
+                        <!-- Danger Zone -->
+                        <Card.Root class="border-destructive/50">
+                            <Card.Header>
+                                <Card.Title class="flex items-center gap-2 text-destructive">
+                                    <RotateCcw class="w-5 h-5" />
+                                    Reset Daily Session
+                                </Card.Title>
+                                <Card.Description>
+                                    This will check out all teachers, mark all orders as served,
+                                    and prepare the system for a new meal service.
+                                </Card.Description>
+                            </Card.Header>
+                            <Card.Content>
+                                <div class="flex items-start gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 mb-4">
+                                    <AlertTriangle class="w-4 h-4 text-destructive mt-0.5" />
+                                    <p class="text-sm text-muted-foreground">
+                                        <strong class="text-destructive">Warning:</strong> This action cannot be undone. Use this at the end of each meal service.
+                                    </p>
+                                </div>
+                                <Button variant="destructive" onclick={resetSession}>
+                                    <RotateCcw class="w-4 h-4 mr-2" />
+                                    Reset Session
+                                </Button>
+                            </Card.Content>
+                        </Card.Root>
+
+                        <!-- Guidelines -->
+                        <Card.Root>
+                            <Card.Header>
+                                <Card.Title>Session Guidelines</Card.Title>
+                            </Card.Header>
+                            <Card.Content>
+                                <ul class="space-y-2 text-sm">
+                                    <li class="flex items-center gap-2">
+                                        <CheckCircle class="w-4 h-4 text-green-500" />
+                                        <span class="text-muted-foreground">Reset the session at the end of each meal service</span>
+                                    </li>
+                                    <li class="flex items-center gap-2">
+                                        <CheckCircle class="w-4 h-4 text-green-500" />
+                                        <span class="text-muted-foreground">Ensure all orders are completed before resetting</span>
+                                    </li>
+                                    <li class="flex items-center gap-2">
+                                        <CheckCircle class="w-4 h-4 text-green-500" />
+                                        <span class="text-muted-foreground">Pre-orders are preserved for the next check-in</span>
+                                    </li>
+                                    <li class="flex items-center gap-2">
+                                        <AlertTriangle class="w-4 h-4 text-orange-500" />
+                                        <span class="text-muted-foreground">All active seat assignments will be deactivated</span>
+                                    </li>
+                                    <li class="flex items-center gap-2">
+                                        <AlertTriangle class="w-4 h-4 text-orange-500" />
+                                        <span class="text-muted-foreground">All pending/ready orders will be marked as served</span>
+                                    </li>
+                                </ul>
+                            </Card.Content>
+                        </Card.Root>
+
+                        <!-- Current Session Stats -->
+                        <Card.Root>
+                            <Card.Header>
+                                <Card.Title>Current Session Stats</Card.Title>
+                            </Card.Header>
+                            <Card.Content>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="bg-muted/50 p-4 rounded-lg">
+                                        <p class="text-sm text-muted-foreground mb-1">Active Assignments</p>
+                                        <p class="text-2xl font-bold text-green-500">{stats.activeSeats}</p>
+                                    </div>
+                                    <div class="bg-muted/50 p-4 rounded-lg">
+                                        <p class="text-sm text-muted-foreground mb-1">Orders Today</p>
+                                        <p class="text-2xl font-bold text-orange-500">{stats.todayOrders}</p>
+                                    </div>
+                                </div>
+                            </Card.Content>
+                        </Card.Root>
                     </div>
-                </div>
-            </div>
+                </Tabs.Content>
+
+                <!-- Pre-order Tab -->
+                <Tabs.Content value="preorder" class="mt-0">
+                    <div class="max-w-2xl space-y-6">
+                        <!-- Public Access -->
+                        <Card.Root>
+                            <Card.Header>
+                                <Card.Title>Public Pre-order Access</Card.Title>
+                                <Card.Description>
+                                    Share this link with teachers to place pre-orders before arriving
+                                </Card.Description>
+                            </Card.Header>
+                            <Card.Content>
+                                <div class="bg-muted/50 p-4 rounded-lg border mb-4">
+                                    <code class="text-orange-500 text-sm">{typeof window !== 'undefined' ? window.location.origin : ''}/preorder</code>
+                                </div>
+                                <Button href="/preorder" target="_blank">
+                                    <ExternalLink class="w-4 h-4 mr-2" />
+                                    Open Pre-order Page
+                                </Button>
+                            </Card.Content>
+                        </Card.Root>
+
+                        <!-- How It Works -->
+                        <Card.Root>
+                            <Card.Header>
+                                <Card.Title>How Pre-orders Work</Card.Title>
+                            </Card.Header>
+                            <Card.Content>
+                                <ol class="space-y-3 text-sm text-muted-foreground list-decimal list-inside">
+                                    <li>Teachers visit the pre-order page and select their name</li>
+                                    <li>They browse the menu and customize their breakfast order</li>
+                                    <li>Pre-orders are saved and linked to their teacher account</li>
+                                    <li>When they check in at a table, their pre-order is automatically loaded</li>
+                                    <li>The order is sent directly to the kitchen</li>
+                                    <li>If no pre-order exists, the waiter can take their order manually</li>
+                                </ol>
+                            </Card.Content>
+                        </Card.Root>
+
+                        <!-- Pro Tips -->
+                        <Card.Root class="border-blue-500/30 bg-blue-500/5">
+                            <Card.Header>
+                                <Card.Title class="flex items-center gap-2 text-blue-400">
+                                    <Info class="w-5 h-5" />
+                                    Pro Tips
+                                </Card.Title>
+                            </Card.Header>
+                            <Card.Content>
+                                <ul class="space-y-2 text-sm text-muted-foreground">
+                                    <li class="flex items-center gap-2">
+                                        <span>📱</span>
+                                        <span>Pre-order page works great on mobile devices</span>
+                                    </li>
+                                    <li class="flex items-center gap-2">
+                                        <span>🔄</span>
+                                        <span>Pre-orders are automatically fulfilled when loaded</span>
+                                    </li>
+                                    <li class="flex items-center gap-2">
+                                        <span>⏰</span>
+                                        <span>Encourage teachers to pre-order the night before</span>
+                                    </li>
+                                    <li class="flex items-center gap-2">
+                                        <span>✨</span>
+                                        <span>Pre-orders include all customizations and dietary notes</span>
+                                    </li>
+                                </ul>
+                            </Card.Content>
+                        </Card.Root>
+                    </div>
+                </Tabs.Content>
+
+                <!-- Tables Tab -->
+                <Tabs.Content value="tables" class="mt-0">
+                    <div class="max-w-4xl space-y-6">
+                        <!-- Table Selection -->
+                        <Card.Root>
+                            <Card.Header>
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <Card.Title>My Table Assignments</Card.Title>
+                                        <Card.Description>
+                                            Select the tables you're responsible for.
+                                            {#if assignedTables.length === 0}
+                                                <Badge variant="outline" class="ml-2 text-orange-500 border-orange-500/50">Showing all tables</Badge>
+                                            {:else}
+                                                <Badge variant="outline" class="ml-2">{assignedTables.length} table(s) assigned</Badge>
+                                            {/if}
+                                        </Card.Description>
+                                    </div>
+                                </div>
+                            </Card.Header>
+                            <Card.Content>
+                                <div class="flex gap-2 mb-6">
+                                    <Button variant="default" onclick={selectAllTables}>
+                                        Select All
+                                    </Button>
+                                    <Button variant="outline" onclick={clearAllTables}>
+                                        Clear All
+                                    </Button>
+                                </div>
+
+                                <div class="grid grid-cols-6 md:grid-cols-11 gap-3">
+                                    {#each Array.from({ length: 22 }, (_, i) => i + 1) as tableId}
+                                        <button
+                                            class="aspect-square rounded-xl flex items-center justify-center text-xl font-bold transition-all active:scale-95 {assignedTables.includes(tableId)
+                                                ? 'bg-primary text-primary-foreground border-2 border-primary'
+                                                : 'bg-muted text-muted-foreground border-2 border-border hover:border-muted-foreground/50'}"
+                                            onclick={() => toggleTable(tableId)}
+                                        >
+                                            {tableId}
+                                        </button>
+                                    {/each}
+                                </div>
+                            </Card.Content>
+                        </Card.Root>
+
+                        <!-- Info Box -->
+                        <Card.Root class="border-blue-500/30 bg-blue-500/5">
+                            <Card.Header>
+                                <Card.Title class="flex items-center gap-2 text-blue-400">
+                                    <Bell class="w-5 h-5" />
+                                    How It Works
+                                </Card.Title>
+                            </Card.Header>
+                            <Card.Content>
+                                <ul class="space-y-2 text-sm text-muted-foreground">
+                                    <li class="flex items-center gap-2">
+                                        <span>🔔</span>
+                                        <span>You'll only get "Order Ready" notifications for your assigned tables</span>
+                                    </li>
+                                    <li class="flex items-center gap-2">
+                                        <span>👀</span>
+                                        <span>You can still see all tables in Waiter Mode</span>
+                                    </li>
+                                    <li class="flex items-center gap-2">
+                                        <span>⚡</span>
+                                        <span>If no tables are selected, you'll receive all notifications</span>
+                                    </li>
+                                    <li class="flex items-center gap-2">
+                                        <span>💾</span>
+                                        <span>Your table assignments are saved locally on this device</span>
+                                    </li>
+                                </ul>
+                            </Card.Content>
+                        </Card.Root>
+                    </div>
+                </Tabs.Content>
+            </Tabs.Root>
         </div>
-    {:else if activeTab === "preorder"}
-        <div class="max-w-2xl space-y-4" in:fade>
-            <div class="bg-zinc-800 rounded-2xl p-6 border border-zinc-700">
-                <h3 class="text-xl font-bold mb-2">Public Pre-order Access</h3>
-                <p class="text-zinc-400 mb-4">
-                    Share this link with teachers to place pre-orders before
-                    arriving:
-                </p>
-                <div
-                    class="bg-zinc-900 p-4 rounded-xl border border-zinc-700 mb-4"
-                >
-                    <code class="text-orange-400 text-sm"
-                        >{window.location.origin}/preorder</code
-                    >
-                </div>
-                <a
-                    href="/preorder"
-                    target="_blank"
-                    class="inline-block px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl transition-colors font-medium"
-                >
-                    Open Pre-order Page →
-                </a>
-            </div>
-
-            <div class="bg-zinc-800 rounded-2xl p-6 border border-zinc-700">
-                <h3 class="text-xl font-bold mb-2">How Pre-orders Work</h3>
-                <ol class="space-y-3 text-zinc-400 text-sm list-decimal list-inside">
-                    <li>
-                        Teachers visit the pre-order page and select their name
-                    </li>
-                    <li>
-                        They browse the menu and customize their breakfast order
-                    </li>
-                    <li>
-                        Pre-orders are saved and linked to their teacher account
-                    </li>
-                    <li>
-                        When they check in at a table, their pre-order is
-                        automatically loaded
-                    </li>
-                    <li>The order is sent directly to the kitchen</li>
-                    <li>
-                        If no pre-order exists, the waiter can take their order
-                        manually
-                    </li>
-                </ol>
-            </div>
-
-            <div class="bg-blue-900/20 border border-blue-500/50 rounded-2xl p-6">
-                <h3 class="text-xl font-bold mb-2 text-blue-400">
-                    💡 Pro Tips
-                </h3>
-                <ul class="space-y-2 text-zinc-400 text-sm">
-                    <li>
-                        📱 Pre-order page works great on mobile devices
-                    </li>
-                    <li>
-                        🔄 Pre-orders are automatically fulfilled when loaded
-                    </li>
-                    <li>
-                        ⏰ Encourage teachers to pre-order the night before
-                    </li>
-                    <li>
-                        ✨ Pre-orders include all customizations and dietary notes
-                    </li>
-                </ul>
-            </div>
-        </div>
-    {:else if activeTab === "tables"}
-        <div class="max-w-4xl space-y-6" in:fade>
-            <div class="bg-zinc-800 rounded-2xl p-6 border border-zinc-700">
-                <h2 class="text-2xl font-bold mb-2">My Table Assignments</h2>
-                <p class="text-zinc-400 mb-6">
-                    Select the tables you're responsible for. You'll only receive notifications for orders from these tables.
-                    {#if assignedTables.length === 0}
-                        <span class="text-orange-400 font-medium">Currently showing all tables.</span>
-                    {:else}
-                        <span class="text-orange-400 font-medium">Assigned to {assignedTables.length} table(s).</span>
-                    {/if}
-                </p>
-
-                <div class="flex gap-2 mb-6">
-                    <button
-                        class="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-medium transition-colors"
-                        on:click={selectAllTables}
-                    >
-                        Select All
-                    </button>
-                    <button
-                        class="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-white rounded-xl font-medium transition-colors"
-                        on:click={clearAllTables}
-                    >
-                        Clear All
-                    </button>
-                </div>
-
-                <div class="grid grid-cols-6 md:grid-cols-11 gap-3">
-                    {#each Array.from({ length: 22 }, (_, i) => i + 1) as tableId}
-                        <button
-                            class="aspect-square rounded-xl flex items-center justify-center text-xl font-bold transition-all active:scale-95 {assignedTables.includes(tableId)
-                                ? 'bg-orange-500 text-white border-2 border-orange-400'
-                                : 'bg-zinc-700 text-zinc-400 border-2 border-zinc-600 hover:border-zinc-500'}"
-                            on:click={() => toggleTable(tableId)}
-                        >
-                            {tableId}
-                        </button>
-                    {/each}
-                </div>
-            </div>
-
-            <div class="bg-blue-900/20 border border-blue-500/50 rounded-2xl p-6">
-                <h3 class="text-xl font-bold mb-2 text-blue-400">
-                    📋 How It Works
-                </h3>
-                <ul class="space-y-2 text-zinc-400 text-sm">
-                    <li>
-                        🔔 You'll only get "Order Ready" notifications for your assigned tables
-                    </li>
-                    <li>
-                        👀 You can still see all tables in Waiter Mode
-                    </li>
-                    <li>
-                        ⚡ If no tables are selected, you'll receive all notifications
-                    </li>
-                    <li>
-                        💾 Your table assignments are saved locally on this device
-                    </li>
-                </ul>
-            </div>
-        </div>
-    {/if}
+    </ScrollArea>
 </div>

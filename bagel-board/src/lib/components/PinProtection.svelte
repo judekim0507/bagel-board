@@ -1,20 +1,22 @@
 <script lang="ts">
     import { verifyPin } from "$lib/stores/auth";
-    import { fade } from "svelte/transition";
+    import { fade, scale } from "svelte/transition";
+
+    // Icons
+    import Lock from "lucide-svelte/icons/lock";
+    import Delete from "lucide-svelte/icons/delete";
+    import UtensilsCrossed from "lucide-svelte/icons/utensils-crossed";
 
     let pin = "";
     let error = false;
     let shaking = false;
 
-    function handleInput(num: number) {
+    function handleKeyPress(digit: string) {
         if (pin.length >= 4) return;
+        pin += digit;
 
-        pin = pin + num.toString();
-        error = false;
-
-        // Auto-submit when we hit 4 digits
         if (pin.length === 4) {
-            setTimeout(() => checkPin(), 200);
+            setTimeout(() => checkPin(), 150);
         }
     }
 
@@ -39,67 +41,92 @@
 </script>
 
 <div
-    class="fixed inset-0 bg-[#171717] z-50 flex items-center justify-center backdrop-blur-sm pointer-events-none"
+    class="fixed inset-0 bg-stone-950 z-50 flex flex-col items-center justify-center"
     in:fade={{ duration: 150 }}
 >
-    <div class="w-full max-w-sm p-8 flex flex-col items-center pointer-events-auto">
-        <h1 class="text-white text-2xl font-medium mb-4 tracking-tight">
-            Enter PIN
-        </h1>
-
-        <!-- PIN Dots -->
-        <div class="flex gap-6 mb-12" class:animate-shake={shaking}>
-            {#each Array(4) as _, i}
-                <div
-                    class="w-5 h-5 rounded-full transition-all duration-200"
-                    class:bg-[#ffffff1a]={!error && i >= pin.length}
-                    class:bg-white={!error && i < pin.length}
-                    class:bg-red-500={error}
-                ></div>
-            {/each}
+    <div class="flex-1 flex flex-col items-center justify-center w-full max-w-sm px-8">
+        <!-- Header -->
+        <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-6">
+            <Lock class="w-8 h-8 text-primary" />
         </div>
 
-        <!-- Keypad -->
-        <div class="grid grid-cols-3 gap-6 w-full max-w-[280px]">
-            {#each [1, 2, 3, 4, 5, 6, 7, 8, 9] as num}
-                <button
-                    class="w-20 h-20 rounded-full hover:bg-white/20 active:bg-white/30 text-white text-2xl font-medium transition-colors flex items-center justify-center backdrop-blur-md border border-white/5"
-                    on:click={() => handleInput(num)}
+        <h1 class="text-foreground text-2xl font-semibold mb-2 tracking-tight">
+            Enter PIN
+        </h1>
+        <p class="text-muted-foreground text-sm mb-8">
+            Staff access only
+        </p>
+
+        <!-- PIN Display -->
+        <div class="flex gap-3 mb-8" class:animate-shake={shaking}>
+            {#each [0, 1, 2, 3] as i}
+                <div
+                    class="w-14 h-14 rounded-xl border-2 flex items-center justify-center transition-all
+                           {error ? 'border-destructive bg-destructive/10' : pin.length > i ? 'border-primary bg-primary/10' : 'border-stone-700 bg-stone-900'}"
                 >
-                    {num}
-                </button>
+                    {#if pin.length > i}
+                        <div
+                            class="w-3 h-3 rounded-full {error ? 'bg-destructive' : 'bg-primary'}"
+                            in:scale={{ duration: 100 }}
+                        ></div>
+                    {/if}
+                </div>
             {/each}
-            <div class="w-20 h-20"></div>
-            <button
-                class="w-20 h-20 rounded-full hover:bg-white/20 active:bg-white/30 text-white text-2xl font-medium transition-colors flex items-center justify-center backdrop-blur-md border border-white/5"
-                on:click={() => handleInput(0)}
-            >
-                0
-            </button>
-            <button
-                class="w-20 h-20 rounded-full text-white/70 hover:text-white hover:bg-white/10 transition-colors flex items-center justify-center"
-                on:click={handleDelete}
-            >
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke-width="1.5"
-                    stroke="currentColor"
-                    class="w-8 h-8"
-                >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        d="M12 9.75L14.25 12m0 0l2.25 2.25M14.25 12l2.25-2.25M14.25 12L12 14.25m-2.58 4.92l-6.374-6.375a1.125 1.125 0 010-1.59L9.42 4.83c.21-.211.497-.33.795-.33H19.5a2.25 2.25 0 012.25 2.25v10.5a2.25 2.25 0 01-2.25 2.25h-9.284c-.298 0-.585-.119-.795-.33z"
-                    />
-                </svg>
-            </button>
         </div>
 
         {#if error}
-            <p class="text-red-400 text-sm mt-6">Incorrect PIN</p>
+            <p class="text-destructive text-sm mb-4 animate-in fade-in">
+                Incorrect PIN
+            </p>
         {/if}
+
+        <!-- Keypad -->
+        <div class="grid grid-cols-3 gap-3 w-full max-w-[280px]">
+            {#each ['1', '2', '3', '4', '5', '6', '7', '8', '9'] as digit}
+                <button
+                    class="h-16 rounded-xl bg-stone-800 hover:bg-stone-700 active:bg-stone-600
+                           text-foreground text-2xl font-semibold transition-all active:scale-95
+                           border border-stone-700"
+                    onclick={() => handleKeyPress(digit)}
+                >
+                    {digit}
+                </button>
+            {/each}
+
+            <!-- Empty space -->
+            <div></div>
+
+            <!-- 0 -->
+            <button
+                class="h-16 rounded-xl bg-stone-800 hover:bg-stone-700 active:bg-stone-600
+                       text-foreground text-2xl font-semibold transition-all active:scale-95
+                       border border-stone-700"
+                onclick={() => handleKeyPress('0')}
+            >
+                0
+            </button>
+
+            <!-- Delete -->
+            <button
+                class="h-16 rounded-xl bg-stone-800 hover:bg-stone-700 active:bg-stone-600
+                       text-muted-foreground transition-all active:scale-95 flex items-center justify-center
+                       border border-stone-700"
+                onclick={handleDelete}
+            >
+                <Delete class="w-6 h-6" />
+            </button>
+        </div>
+    </div>
+
+    <!-- Pre-order Link -->
+    <div class="pb-8 pt-4">
+        <a
+            href="/preorder"
+            class="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm"
+        >
+            <UtensilsCrossed class="w-4 h-4" />
+            <span>Want to place a pre-order?</span>
+        </a>
     </div>
 </div>
 
@@ -109,17 +136,9 @@
     }
 
     @keyframes shake {
-        10%, 90% {
-            transform: translate3d(-1px, 0, 0);
-        }
-        20%, 80% {
-            transform: translate3d(2px, 0, 0);
-        }
-        30%, 50%, 70% {
-            transform: translate3d(-4px, 0, 0);
-        }
-        40%, 60% {
-            transform: translate3d(4px, 0, 0);
-        }
+        10%, 90% { transform: translate3d(-2px, 0, 0); }
+        20%, 80% { transform: translate3d(4px, 0, 0); }
+        30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+        40%, 60% { transform: translate3d(6px, 0, 0); }
     }
 </style>

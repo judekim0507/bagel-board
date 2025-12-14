@@ -1,16 +1,28 @@
 <script lang="ts">
     import { orders, seats } from "$lib/stores/realtime";
     import { teachers, fetchTeachers } from "$lib/stores/teachers";
-    import { fade, slide, scale } from "svelte/transition";
+    import { slide, scale } from "svelte/transition";
     import { onMount } from "svelte";
     import { toast } from "svelte-sonner";
+
+    // shadcn-svelte components
+    import { Button } from "$lib/components/ui/button/index.js";
+    import * as Card from "$lib/components/ui/card/index.js";
+    import { Badge } from "$lib/components/ui/badge/index.js";
+    import { ScrollArea } from "$lib/components/ui/scroll-area/index.js";
+
+    // Icons
+    import Check from "lucide-svelte/icons/check";
+    import Clock from "lucide-svelte/icons/clock";
+    import AlertTriangle from "lucide-svelte/icons/alert-triangle";
+    import ChefHat from "lucide-svelte/icons/chef-hat";
+    import PartyPopper from "lucide-svelte/icons/party-popper";
 
     let now = Date.now();
     let interval: any;
     let previousOrderCount = 0;
 
     onMount(() => {
-        // Load teacher data
         fetchTeachers();
 
         interval = setInterval(() => {
@@ -22,45 +34,29 @@
 
     // Watch for new orders and play sound
     $: {
-        const currentCount = activeOrders.filter(
-            (o) => o.status === "pending",
-        ).length;
+        const currentCount = activeOrders.filter((o) => o.status === "pending").length;
         if (previousOrderCount > 0 && currentCount > previousOrderCount) {
-            // New order arrived! Create new audio instance to allow layering
             const audio = new Audio("/sounds/new-order.wav");
-            audio.play().catch(() => {
-                // Ignore if audio play fails (e.g., no user interaction yet)
-            });
-            toast.info("🔔 New order received!", { duration: 3000 });
+            audio.play().catch(() => {});
+            toast.info("New order received!", { duration: 3000 });
         }
         previousOrderCount = currentCount;
     }
 
-    // Enrich orders with teacher and seat info (depends on now for live timer)
     $: enrichedOrders = $orders.map((order) => {
         const teacher = $teachers.find((t) => t.id === order.teacher_id);
         const seat = $seats.find((s) => s.id === order.seat_id);
         const elapsed = getElapsedSeconds(order.created_at, now);
-        const timeRemaining = 120 - elapsed; // 2 minute target
+        const timeRemaining = 120 - elapsed;
 
-        return {
-            ...order,
-            teacher,
-            seat,
-            elapsed,
-            timeRemaining,
-        };
+        return { ...order, teacher, seat, elapsed, timeRemaining };
     });
 
-    // Filter and sort: active orders by urgency (least time remaining first)
     $: activeOrders = enrichedOrders
         .filter((o) => o.status !== "served")
         .sort((a, b) => {
-            // Ready orders go to the end
             if (a.status === "ready" && b.status !== "ready") return 1;
             if (a.status !== "ready" && b.status === "ready") return -1;
-
-            // Otherwise sort by time remaining (least first = most urgent)
             return a.timeRemaining - b.timeRemaining;
         });
 
@@ -75,17 +71,17 @@
         return `${m}:${s.toString().padStart(2, "0")}`;
     }
 
-    function getTimerColor(elapsed: number) {
-        if (elapsed > 120) return "text-red-500"; // > 2 mins
-        if (elapsed > 60) return "text-orange-500"; // > 1 min
-        return "text-green-500";
+    function getTimerVariant(elapsed: number): "default" | "secondary" | "destructive" | "outline" {
+        if (elapsed > 120) return "destructive";
+        if (elapsed > 60) return "secondary";
+        return "outline";
     }
 
-    function getCardStyle(elapsed: number, status: string) {
-        if (status === "ready") return "border-green-500 bg-green-900/20";
-        if (elapsed > 120) return "border-red-500 bg-red-900/20 animate-pulse";
-        if (elapsed > 60) return "border-orange-500 bg-orange-900/10";
-        return "border-zinc-700";
+    function getCardBorder(elapsed: number, status: string) {
+        if (status === "ready") return "border-green-500/50 bg-green-500/5";
+        if (elapsed > 120) return "border-destructive/50 bg-destructive/5";
+        if (elapsed > 60) return "border-orange-500/30 bg-orange-500/5";
+        return "border-border";
     }
 
     async function markReady(orderId: string) {
@@ -94,7 +90,6 @@
             body: JSON.stringify({ order_id: orderId, status: "ready" }),
         });
 
-        // Create new audio instance to allow layering
         const readyAudio = new Audio("/sounds/ready.wav");
         readyAudio.play().catch(() => {});
 
@@ -119,161 +114,142 @@
     }
 </script>
 
-<div class="flex-1 p-6 overflow-hidden flex flex-col bg-zinc-900">
-    <header class="mb-6 flex justify-between items-center">
+<div class="flex-1 p-6 overflow-hidden flex flex-col bg-background">
+    <!-- Header -->
+    <header class="mb-6 flex justify-between items-center flex-none">
         <div>
-            <h1 class="text-2xl font-bold text-white">Kitchen Display</h1>
-            <p class="text-zinc-500 text-sm">
-                Real-time orders • Auto-sorted by urgency
+            <h1 class="text-2xl font-semibold text-foreground flex items-center gap-2">
+                <ChefHat class="w-6 h-6" />
+                Kitchen Display
+            </h1>
+            <p class="text-muted-foreground text-sm">
+                Orders sorted by urgency
             </p>
         </div>
-        <div class="flex items-center gap-4">
-            <div class="text-right">
-                <div class="text-zinc-500 text-xs uppercase tracking-wide">
-                    Active Orders
-                </div>
-                <div class="text-3xl font-bold text-orange-400">
-                    {activeOrders.length}
-                </div>
+        <div class="flex items-center gap-3">
+            <div class="bg-card border rounded-lg px-4 py-2 text-center">
+                <p class="text-xs text-muted-foreground uppercase tracking-wide">Active</p>
+                <p class="text-2xl font-bold text-primary">{activeOrders.length}</p>
             </div>
         </div>
     </header>
 
-    <div
-        class="flex-1 overflow-x-auto overflow-y-hidden flex gap-4 pb-4 custom-scrollbar"
-    >
-        {#each activeOrders as order (order.id)}
-            {@const elapsed = order.elapsed}
-            {@const isUrgent = elapsed > 90}
-            {@const isOverdue = elapsed > 120}
-            <div
-                class="w-80 flex-none bg-zinc-800 rounded-2xl p-5 flex flex-col border-2 shadow-xl transition-all {getCardStyle(
-                    elapsed,
-                    order.status,
-                )}"
-                in:scale={{ duration: 200, start: 0.9 }}
-                out:slide={{ axis: "x", duration: 300 }}
-            >
-                <!-- Header -->
-                <div class="mb-4 border-b border-zinc-700 pb-3">
-                    <div class="flex justify-between items-start mb-2">
-                        <div>
-                            <div
-                                class="text-2xl font-bold text-white mb-1 flex items-center gap-2"
-                            >
-                                Table {order.seat?.table_id || "?"}
-                                <span class="text-zinc-600">•</span>
-                                <span class="text-zinc-400 text-lg"
-                                    >Seat {order.seat?.position || "?"}</span
-                                >
-                            </div>
-                            <div class="text-sm text-zinc-400">
-                                {order.teacher?.name || "Unknown Teacher"}
-                            </div>
-                            {#if order.teacher?.dietary_notes}
-                                <div
-                                    class="text-xs bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded mt-1 inline-block"
-                                >
-                                    ⚠ {order.teacher.dietary_notes}
-                                </div>
-                            {/if}
-                        </div>
-                        <div class="text-right">
-                            <div
-                                class="font-mono font-bold text-3xl {getTimerColor(
-                                    elapsed,
-                                )} {isOverdue ? 'animate-pulse' : ''}"
-                            >
-                                {formatTime(elapsed)}
-                            </div>
-                            {#if isUrgent && order.status !== "ready"}
-                                <div
-                                    class="text-xs text-red-400 font-bold mt-1"
-                                >
-                                    URGENT
-                                </div>
-                            {/if}
-                        </div>
-                    </div>
-                    <div class="flex gap-2">
-                        <span class="text-xs text-zinc-500 font-mono"
-                            >#{order.id.slice(0, 8)}</span
-                        >
-                        <span
-                            class="text-xs px-2 py-0.5 rounded-full {order.status ===
-                            'ready'
-                                ? 'bg-green-500/20 text-green-400'
-                                : 'bg-zinc-700 text-zinc-400'}"
-                        >
-                            {order.status}
-                        </span>
-                    </div>
-                </div>
+    <!-- Orders -->
+    <ScrollArea class="flex-1" orientation="horizontal">
+        <div class="flex gap-4 pb-4 h-full">
+            {#each activeOrders as order (order.id)}
+                {@const elapsed = order.elapsed}
+                {@const isUrgent = elapsed > 90}
+                {@const isOverdue = elapsed > 120}
 
-                <!-- Order Items -->
                 <div
-                    class="flex-1 overflow-y-auto min-h-[120px] mb-4 custom-scrollbar"
+                    class="h-full"
+                    in:scale={{ duration: 200, start: 0.95 }}
+                    out:slide={{ axis: "x", duration: 300 }}
                 >
-                    <ul class="space-y-3">
-                        {#each order.order_items as item}
-                            <li
-                                class="bg-zinc-900/50 p-3 rounded-lg border border-zinc-700"
+                <Card.Root
+                    class="w-80 h-full flex-none flex flex-col {getCardBorder(elapsed, order.status)} {isOverdue && order.status !== 'ready' ? 'animate-pulse' : ''}"
+                >
+                    <Card.Header class="pb-3">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <Card.Title class="flex items-center gap-2">
+                                    Table {order.seat?.table_id || "?"}
+                                    <span class="text-muted-foreground font-normal">
+                                        · Seat {order.seat?.position || "?"}
+                                    </span>
+                                </Card.Title>
+                                <Card.Description>
+                                    {order.teacher?.name || "Unknown"}
+                                </Card.Description>
+                            </div>
+                            <div class="text-right">
+                                <Badge variant={getTimerVariant(elapsed)} class="font-mono text-lg px-2 py-1 {isOverdue && order.status !== 'ready' ? 'animate-pulse' : ''}">
+                                    <Clock class="w-3.5 h-3.5 mr-1" />
+                                    {formatTime(elapsed)}
+                                </Badge>
+                                {#if isUrgent && order.status !== "ready"}
+                                    <div class="flex items-center justify-end gap-1 mt-1 text-destructive">
+                                        <AlertTriangle class="w-3 h-3" />
+                                        <span class="text-xs font-semibold">URGENT</span>
+                                    </div>
+                                {/if}
+                            </div>
+                        </div>
+
+                        {#if order.teacher?.dietary_notes}
+                            <Badge variant="outline" class="mt-2 text-orange-400 border-orange-500/50 bg-orange-500/10">
+                                <AlertTriangle class="w-3 h-3 mr-1" />
+                                {order.teacher.dietary_notes}
+                            </Badge>
+                        {/if}
+
+                        <div class="flex gap-2 mt-2">
+                            <Badge variant="outline" class="text-xs font-mono">
+                                #{order.id.slice(0, 8)}
+                            </Badge>
+                            <Badge variant={order.status === "ready" ? "default" : "secondary"} class="text-xs {order.status === 'ready' ? 'bg-green-500' : ''}">
+                                {order.status}
+                            </Badge>
+                        </div>
+                    </Card.Header>
+
+                    <Card.Content class="flex-1 overflow-hidden">
+                        <ScrollArea class="h-full max-h-[180px]">
+                            <div class="space-y-2">
+                                {#each order.order_items as item}
+                                    <div class="bg-muted/50 border rounded-lg p-3">
+                                        <p class="font-semibold text-foreground">
+                                            {item.menu_items?.name || "Unknown Item"}
+                                        </p>
+                                        {#if item.toppings?.length > 0}
+                                            <div class="flex flex-wrap gap-1 mt-1.5">
+                                                {#each item.toppings as topping}
+                                                    <Badge variant="secondary" class="text-xs py-0">
+                                                        {topping}
+                                                    </Badge>
+                                                {/each}
+                                            </div>
+                                        {/if}
+                                        {#if item.notes}
+                                            <div class="mt-2 text-sm bg-yellow-500/10 text-yellow-400 border border-yellow-500/30 rounded px-2 py-1">
+                                                "{item.notes}"
+                                            </div>
+                                        {/if}
+                                    </div>
+                                {/each}
+                            </div>
+                        </ScrollArea>
+                    </Card.Content>
+
+                    <Card.Footer class="pt-3">
+                        {#if order.status === "pending" || order.status === "preparing"}
+                            <Button class="w-full" size="lg" onclick={() => markReady(order.id)}>
+                                <Check class="w-4 h-4 mr-2" />
+                                Mark Ready
+                            </Button>
+                        {:else if order.status === "ready"}
+                            <Button
+                                class="w-full bg-green-500 hover:bg-green-600"
+                                size="lg"
+                                onclick={() => markServed(order.id)}
                             >
-                                <div class="font-bold text-lg text-white mb-1">
-                                    {item.menu_items?.name || "Unknown Item"}
-                                </div>
-                                {#if item.toppings && Array.isArray(item.toppings) && item.toppings.length > 0}
-                                    <div class="flex flex-wrap gap-1 mb-2">
-                                        {#each item.toppings as topping}
-                                            <span
-                                                class="text-xs bg-zinc-700 text-zinc-300 px-2 py-0.5 rounded"
-                                            >
-                                                {topping}
-                                            </span>
-                                        {/each}
-                                    </div>
-                                {/if}
-                                {#if item.notes}
-                                    <div
-                                        class="text-sm text-yellow-400 italic mt-1 bg-yellow-900/20 px-2 py-1 rounded"
-                                    >
-                                        💬 "{item.notes}"
-                                    </div>
-                                {/if}
-                            </li>
-                        {/each}
-                    </ul>
+                                <Check class="w-4 h-4 mr-2" />
+                                Complete
+                            </Button>
+                        {/if}
+                    </Card.Footer>
+                </Card.Root>
                 </div>
+            {/each}
 
-                <!-- Action Buttons -->
-                <div class="mt-auto">
-                    {#if order.status === "pending" || order.status === "preparing"}
-                        <button
-                            class="w-full py-4 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold rounded-xl transition-all shadow-lg"
-                            on:click={() => markReady(order.id)}
-                        >
-                            ✓ Mark Ready to Serve
-                        </button>
-                    {:else if order.status === "ready"}
-                        <button
-                            class="w-full py-4 bg-green-600 hover:bg-green-500 active:scale-95 text-white font-bold rounded-xl transition-all shadow-lg animate-pulse"
-                            on:click={() => markServed(order.id)}
-                        >
-                            ✓ Complete & Remove
-                        </button>
-                    {/if}
+            {#if activeOrders.length === 0}
+                <div class="flex-1 flex flex-col items-center justify-center text-muted-foreground min-w-[400px]">
+                    <PartyPopper class="w-16 h-16 mb-4 opacity-30" />
+                    <p class="text-xl font-semibold">All caught up!</p>
+                    <p class="text-sm">No active orders</p>
                 </div>
-            </div>
-        {/each}
-
-        {#if activeOrders.length === 0}
-            <div
-                class="flex-1 flex flex-col items-center justify-center text-zinc-600"
-            >
-                <div class="text-6xl mb-4">🎉</div>
-                <div class="text-xl font-bold">All caught up!</div>
-                <div class="text-sm italic">No active orders</div>
-            </div>
-        {/if}
-    </div>
+            {/if}
+        </div>
+    </ScrollArea>
 </div>

@@ -12,49 +12,45 @@
 		initRealtime();
 	}
 
-	// Check if current route is preorder (public access)
 	$: isPreorderRoute = $page.url.pathname.startsWith("/preorder");
 </script>
 
 <svelte:head>
-	<meta name="theme-color" content="#090B0C" />
+	<meta name="theme-color" content="#0c0a09" />
 	<link rel="preconnect" href="https://fonts.googleapis.com" />
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
 	<link
-		href="https://fonts.googleapis.com/css2?family=BBH+Bogle&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+		href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
 		rel="stylesheet"
 	/>
 </svelte:head>
 
-<div
-	class="h-screen w-full bg-black text-white antialiased overflow-hidden flex items-center justify-center overflow-hidden"
->
+<div class="dark h-screen w-full antialiased overflow-hidden flex items-center justify-center bg-stone-950">
 	<Toaster richColors position="top-center" />
 
 	{#if isPreorderRoute}
-		<!-- Preorder Route - No PIN, No Nav, Standalone -->
-		<div class="w-full h-full bg-zinc-900">
+		<!-- Preorder Route - Dark theme, standalone, no nav -->
+		<div class="w-full h-full bg-background">
 			<slot />
 		</div>
 	{:else if !$isAuthenticated}
-		<!-- Staff Routes - PIN Protection -->
+		<!-- PIN Protection -->
 		<PinProtection />
 	{:else}
-		<!-- Staff Routes - Authenticated -->
-		<div
-			class="w-full h-full max-w-[1400px] bg-[#090B0C] overflow-hidden flex flex-col shadow-2xl ring-1 ring-white/10 overflow-hidden"
-		>
-			<!-- Main Content Area (Gray Card) -->
-			<main
-				class="flex-1 bg-zinc-200 rounded-[18px] mt-2 mx-2 overflow-hidden flex flex-col relative"
-			>
+		<!-- All Staff Routes - Same layout with dark shell and rounded content -->
+		<div class="w-full h-full max-w-[1600px] bg-stone-950 overflow-hidden flex flex-col">
+			<main class="flex-1 bg-card rounded-2xl mt-2 mx-2 overflow-hidden flex flex-col border border-border/50 shadow-xl">
 				<slot />
 			</main>
-
-			<!-- Bottom Navigation Strip -->
-			<div class="h-14 bg-[#090B0C] flex-none px-6 rounded-b-[18px]">
+			<div class="h-14 bg-stone-950 flex-none px-6">
 				<BottomNav />
 			</div>
 		</div>
 	{/if}
 </div>
+
+<style>
+	:global(body) {
+		font-family: 'Inter', system-ui, sans-serif;
+	}
+</style>

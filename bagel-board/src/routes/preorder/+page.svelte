@@ -1,11 +1,22 @@
 <script lang="ts">
     import { teachers, fetchTeachers } from "$lib/stores/teachers";
     import { onMount } from "svelte";
-    import { getDeviceId } from "$lib/utils/device";
     import { fade, scale } from "svelte/transition";
+    import { getDeviceId } from "$lib/utils/device";
     import OrderInterface from "$lib/components/OrderInterface.svelte";
 
-    let step = 1; // 1: Teacher Select, 2: OrderInterface (full screen), 3: Success
+    // shadcn-svelte components
+    import { Button } from "$lib/components/ui/button/index.js";
+    import * as Avatar from "$lib/components/ui/avatar/index.js";
+    import { Input } from "$lib/components/ui/input/index.js";
+    import { ScrollArea } from "$lib/components/ui/scroll-area/index.js";
+
+    // Icons
+    import Search from "lucide-svelte/icons/search";
+    import Check from "lucide-svelte/icons/check";
+    import Coffee from "lucide-svelte/icons/coffee";
+
+    let step = 1;
     let selectedTeacher: any = null;
     let searchQuery = "";
 
@@ -38,41 +49,49 @@
 </script>
 
 {#if step === 1}
-    <!-- Teacher Selection - Full Screen -->
-    <div class="h-full bg-zinc-900 text-white p-6 overflow-hidden flex flex-col" in:fade>
-        <header class="mb-6">
-            <h1 class="text-3xl font-bold">Pre-order Your Breakfast</h1>
-            <p class="text-zinc-500 text-sm">
-                Order ahead • Pick up when you arrive
+    <!-- Teacher Selection -->
+    <div class="h-full bg-background text-foreground p-6 overflow-hidden flex flex-col" in:fade={{ duration: 150 }}>
+        <header class="mb-8 text-center">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
+                <Coffee class="w-8 h-8 text-primary" />
+            </div>
+            <h1 class="text-3xl font-bold tracking-tight">Pre-order Breakfast</h1>
+            <p class="text-muted-foreground mt-1">
+                Order ahead and pick up when you arrive
             </p>
         </header>
 
-        <div class="flex-1 overflow-hidden flex flex-col">
-            <div class="max-w-2xl mx-auto flex flex-col gap-4 h-full">
-                <h2 class="text-2xl font-bold text-center mb-2">
+        <div class="flex-1 overflow-hidden flex flex-col max-w-lg mx-auto w-full">
+            <div class="mb-4">
+                <h2 class="text-xl font-semibold text-center mb-4">
                     Who are you?
                 </h2>
-                <input
-                    type="text"
-                    placeholder="Search your name..."
-                    bind:value={searchQuery}
-                    class="w-full px-6 py-4 rounded-2xl bg-zinc-800 text-white border-2 border-zinc-700 focus:outline-none focus:border-orange-500 text-lg"
-                    autofocus
-                />
+                <div class="relative">
+                    <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <Input
+                        type="text"
+                        placeholder="Search your name..."
+                        bind:value={searchQuery}
+                        class="pl-10 h-12 text-lg"
+                        autofocus
+                    />
+                </div>
+            </div>
 
-                <div class="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-3">
+            <ScrollArea class="flex-1">
+                <div class="space-y-2">
                     {#each filteredTeachers as teacher}
                         <button
-                            class="flex items-center gap-4 p-5 rounded-2xl hover:bg-zinc-800 transition-all text-left bg-zinc-800/30 border-2 border-transparent hover:border-orange-500 active:scale-95"
+                            class="w-full flex items-center gap-4 p-4 rounded-xl bg-card border hover:border-primary hover:bg-accent transition-all text-left active:scale-[0.99]"
                             on:click={() => selectTeacher(teacher)}
                         >
-                            <div
-                                class="w-14 h-14 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold text-xl"
-                            >
-                                {teacher.name[0]}
-                            </div>
+                            <Avatar.Root class="h-12 w-12">
+                                <Avatar.Fallback class="bg-primary text-primary-foreground text-lg font-semibold">
+                                    {teacher.name[0]}
+                                </Avatar.Fallback>
+                            </Avatar.Root>
                             <div class="flex-1">
-                                <p class="font-bold text-white text-xl">
+                                <p class="font-semibold text-foreground text-lg">
                                     {teacher.name}
                                 </p>
                             </div>
@@ -80,19 +99,17 @@
                     {/each}
 
                     {#if filteredTeachers.length === 0}
-                        <div
-                            class="flex-1 flex items-center justify-center text-zinc-500 italic"
-                        >
-                            No teachers found
+                        <div class="py-12 text-center text-muted-foreground">
+                            <p>No teachers found</p>
                         </div>
                     {/if}
                 </div>
-            </div>
+            </ScrollArea>
         </div>
     </div>
 {:else if step === 2}
-    <!-- OrderInterface - FULL SCREEN, NO NESTING -->
-    <div class="h-full" in:fade>
+    <!-- Order Interface -->
+    <div class="h-full" in:fade={{ duration: 150 }}>
         <OrderInterface
             teacher={selectedTeacher}
             deviceId={getDeviceId()}
@@ -103,32 +120,24 @@
         />
     </div>
 {:else if step === 3}
-    <!-- Success - Full Screen -->
-    <div class="h-full bg-zinc-900 text-white flex items-center justify-center" in:scale={{ duration: 300, start: 0.9 }}>
-        <div class="flex flex-col items-center gap-6">
-            <div
-                class="w-32 h-32 rounded-full bg-green-500 flex items-center justify-center animate-pulse"
-            >
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke-width="3"
-                    stroke="currentColor"
-                    class="w-16 h-16 text-white"
-                >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        d="M4.5 12.75l6 6 9-13.5"
-                    />
-                </svg>
+    <!-- Success -->
+    <div
+        class="h-full bg-background text-foreground flex items-center justify-center"
+        in:scale={{ duration: 300, start: 0.9 }}
+    >
+        <div class="flex flex-col items-center gap-6 text-center px-6">
+            <div class="w-24 h-24 rounded-full bg-green-500 flex items-center justify-center animate-pulse">
+                <Check class="w-12 h-12 text-white" />
             </div>
-            <h2 class="text-4xl font-bold">Pre-order Received!</h2>
-            <p class="text-zinc-400 text-lg text-center max-w-md">
-                Thanks, {selectedTeacher?.name}! Your order will be ready when you check in.
+            <div>
+                <h2 class="text-3xl font-bold mb-2">Pre-order Received!</h2>
+                <p class="text-muted-foreground text-lg max-w-md">
+                    Thanks, {selectedTeacher?.name}! Your order will be ready when you check in.
+                </p>
+            </div>
+            <p class="text-sm text-muted-foreground mt-4">
+                Resetting in 5 seconds...
             </p>
-            <p class="text-sm text-zinc-600 mt-8">Resetting in 5s...</p>
         </div>
     </div>
 {/if}
