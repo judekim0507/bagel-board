@@ -114,7 +114,7 @@
     }
 </script>
 
-<div class="flex-1 p-6 overflow-hidden flex flex-col bg-background">
+<div class="flex-1 p-6 overflow-hidden flex flex-col">
     <!-- Header -->
     <header class="mb-6 flex justify-between items-center flex-none">
         <div>
@@ -178,20 +178,11 @@
                         </div>
 
                         {#if order.teacher?.dietary_notes}
-                            <Badge variant="outline" class="mt-2 text-orange-400 border-orange-500/50 bg-orange-500/10">
-                                <AlertTriangle class="w-3 h-3 mr-1" />
-                                {order.teacher.dietary_notes}
-                            </Badge>
+                            <div class="mt-2 flex items-start gap-1.5 p-2 rounded-lg bg-orange-500/10 border border-orange-500/30">
+                                <AlertTriangle class="w-3.5 h-3.5 text-orange-400 flex-shrink-0 mt-0.5" />
+                                <span class="text-sm text-orange-400 break-words">{order.teacher.dietary_notes}</span>
+                            </div>
                         {/if}
-
-                        <div class="flex gap-2 mt-2">
-                            <Badge variant="outline" class="text-xs font-mono">
-                                #{order.id.slice(0, 8)}
-                            </Badge>
-                            <Badge variant={order.status === "ready" ? "default" : "secondary"} class="text-xs {order.status === 'ready' ? 'bg-green-500' : ''}">
-                                {order.status}
-                            </Badge>
-                        </div>
                     </Card.Header>
 
                     <Card.Content class="flex-1 overflow-hidden">

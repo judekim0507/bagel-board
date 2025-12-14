@@ -90,19 +90,20 @@
         submitting = true;
 
         const endpoint = mode === "preorder" ? "/api/preorders" : "/api/orders";
-        const payload = mode === "preorder"
-            ? {
-                teacher_id: teacher.id,
-                device_id: deviceId,
-                items: cart,
-                dietary_notes: dietaryNotes,
-            }
-            : {
-                teacher_id: teacher.id,
-                seat_id: seatId,
-                device_id: deviceId,
-                items: cart,
-            };
+        const payload =
+            mode === "preorder"
+                ? {
+                      teacher_id: teacher.id,
+                      device_id: deviceId,
+                      items: cart,
+                      dietary_notes: dietaryNotes,
+                  }
+                : {
+                      teacher_id: teacher.id,
+                      seat_id: seatId,
+                      device_id: deviceId,
+                      items: cart,
+                  };
 
         const res = await fetch(endpoint, {
             method: "POST",
@@ -112,25 +113,39 @@
         submitting = false;
 
         if (res.ok) {
-            toast.success(mode === "preorder" ? "Pre-order submitted!" : "Order sent to kitchen!");
+            toast.success(
+                mode === "preorder"
+                    ? "Pre-order submitted!"
+                    : "Order sent to kitchen!",
+            );
             dispatch("complete");
         } else {
-            toast.error(mode === "preorder" ? "Failed to submit pre-order" : "Failed to submit order");
+            toast.error(
+                mode === "preorder"
+                    ? "Failed to submit pre-order"
+                    : "Failed to submit order",
+            );
         }
     }
 </script>
 
 <div class="flex flex-col h-full bg-background">
     <!-- Header -->
-    <header class="px-6 py-4 border-b bg-card flex justify-between items-center flex-none">
+    <header
+        class="px-6 py-4 border-b bg-card flex justify-between items-center flex-none"
+    >
         <div class="flex items-center gap-4">
-            <Avatar.Root class="h-10 w-10">
-                <Avatar.Fallback class="bg-primary text-primary-foreground font-semibold">
+            <!-- <Avatar.Root class="h-10 w-10">
+                <Avatar.Fallback
+                    class="bg-primary text-primary-foreground font-semibold"
+                >
                     {teacher?.name?.[0]}
                 </Avatar.Fallback>
-            </Avatar.Root>
+            </Avatar.Root> -->
             <div>
-                <h2 class="text-lg font-semibold">{headerTitle}</h2>
+                <h2 class="text-lg font-semibold text-foreground">
+                    {headerTitle}
+                </h2>
                 <p class="text-sm text-muted-foreground">{teacher?.name}</p>
             </div>
         </div>
@@ -142,11 +157,20 @@
                     Change
                 </Button>
             {:else}
-                <Button variant="destructive" size="sm" onclick={() => dispatch("checkout")}>
+                <Button
+                    variant="destructive"
+                    size="sm"
+                    onclick={() => dispatch("checkout")}
+                >
                     <LogOut class="w-4 h-4 mr-1" />
                     Check Out
                 </Button>
-                <Button variant="ghost" size="icon" onclick={() => dispatch("close")}>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onclick={() => dispatch("close")}
+                    class="text-foreground"
+                >
                     <X class="w-5 h-5" />
                 </Button>
             {/if}
@@ -162,25 +186,44 @@
                         {#if group.items.length > 0}
                             <div>
                                 <div class="flex items-center gap-2 mb-4">
-                                    <svelte:component this={group.icon} class="w-4 h-4 text-muted-foreground" />
-                                    <h3 class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                    <svelte:component
+                                        this={group.icon}
+                                        class="w-4 h-4 text-muted-foreground"
+                                    />
+                                    <h3
+                                        class="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                                    >
                                         {group.name}
                                     </h3>
                                 </div>
-                                <div class="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                                <div
+                                    class="grid grid-cols-2 lg:grid-cols-3 gap-3"
+                                >
                                     {#each group.items as item}
                                         <button
                                             class="group relative bg-card border rounded-xl p-4 text-left hover:border-primary hover:bg-accent transition-all active:scale-[0.98]"
-                                            on:click={() => openCustomizeModal(item)}
+                                            on:click={() =>
+                                                openCustomizeModal(item)}
                                         >
-                                            <p class="font-medium text-foreground">{item.name}</p>
+                                            <p
+                                                class="font-medium text-foreground"
+                                            >
+                                                {item.name}
+                                            </p>
                                             {#if item.toppings_config?.customizable}
-                                                <Badge variant="secondary" class="mt-2 text-xs">
+                                                <Badge
+                                                    variant="secondary"
+                                                    class="mt-2 text-xs"
+                                                >
                                                     Customizable
                                                 </Badge>
                                             {/if}
-                                            <div class="absolute top-3 right-3 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <Plus class="w-3 h-3 text-primary" />
+                                            <div
+                                                class="absolute top-3 right-3 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
+                                                <Plus
+                                                    class="w-3 h-3 text-primary"
+                                                />
                                             </div>
                                         </button>
                                     {/each}
@@ -190,7 +233,9 @@
                     {/each}
 
                     {#if $menuItems.length === 0}
-                        <div class="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                        <div
+                            class="flex flex-col items-center justify-center py-12 text-muted-foreground"
+                        >
                             <ShoppingBag class="w-12 h-12 mb-3 opacity-30" />
                             <p>Loading menu...</p>
                         </div>
@@ -203,7 +248,7 @@
         <div class="w-80 lg:w-96 border-l bg-card flex flex-col flex-none">
             <div class="p-4 border-b">
                 <div class="flex items-center justify-between">
-                    <h3 class="font-semibold">Order</h3>
+                    <h3 class="font-semibold text-foreground">Order</h3>
                     <Badge variant="secondary">{cart.length} items</Badge>
                 </div>
             </div>
@@ -229,7 +274,9 @@
                             transition:scale={{ duration: 150, start: 0.95 }}
                         >
                             <div class="flex justify-between items-start mb-1">
-                                <p class="font-medium text-sm flex-1">{item.name}</p>
+                                <p class="font-medium text-sm flex-1">
+                                    {item.name}
+                                </p>
                                 <Button
                                     variant="ghost"
                                     size="icon"
@@ -242,7 +289,10 @@
                             {#if item.toppings?.length > 0}
                                 <div class="flex flex-wrap gap-1 mb-1">
                                     {#each item.toppings as topping}
-                                        <Badge variant="outline" class="text-xs py-0">
+                                        <Badge
+                                            variant="outline"
+                                            class="text-xs py-0"
+                                        >
                                             {topping}
                                         </Badge>
                                     {/each}
@@ -257,7 +307,9 @@
                     {/each}
 
                     {#if cart.length === 0}
-                        <div class="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                        <div
+                            class="flex flex-col items-center justify-center py-12 text-muted-foreground"
+                        >
                             <ShoppingBag class="w-10 h-10 mb-2 opacity-30" />
                             <p class="text-sm">Select items from menu</p>
                         </div>
@@ -273,11 +325,15 @@
                     onclick={submitOrder}
                 >
                     {#if submitting}
-                        <div class="animate-spin rounded-full h-4 w-4 border-2 border-primary-foreground border-t-transparent mr-2"></div>
+                        <div
+                            class="animate-spin rounded-full h-4 w-4 border-2 border-primary-foreground border-t-transparent mr-2"
+                        ></div>
                         Submitting...
                     {:else}
                         <Send class="w-4 h-4 mr-2" />
-                        {mode === "preorder" ? "Place Pre-order" : "Submit Order"}
+                        {mode === "preorder"
+                            ? "Place Pre-order"
+                            : "Submit Order"}
                     {/if}
                 </Button>
             </div>
@@ -287,10 +343,12 @@
 
 <!-- Customization Modal -->
 <Dialog.Root bind:open={showCustomizeModal}>
-    <Dialog.Content class="sm:max-w-lg">
+    <Dialog.Content class="sm:max-w-lg dark bg-card border-border">
         <Dialog.Header>
-            <Dialog.Title>Customize {selectedItem?.name}</Dialog.Title>
-            <Dialog.Description>
+            <Dialog.Title class="text-foreground"
+                >Customize {selectedItem?.name}</Dialog.Title
+            >
+            <Dialog.Description class="text-muted-foreground">
                 Add toppings and special requests
             </Dialog.Description>
         </Dialog.Header>
@@ -298,7 +356,9 @@
         <div class="space-y-6">
             {#if selectedItem?.toppings_config?.customizable && selectedItem?.toppings_config?.options}
                 <div>
-                    <h4 class="text-sm font-medium mb-3">Options</h4>
+                    <h4 class="text-sm font-medium text-foreground mb-3">
+                        Options
+                    </h4>
                     <div class="flex flex-wrap gap-2">
                         {#each selectedItem.toppings_config.options as option}
                             {@const isSelected = customizeToppings.includes(option)}
@@ -312,6 +372,7 @@
                                         customizeToppings = [...customizeToppings, option];
                                     }
                                 }}
+                                class={isSelected ? "" : "text-muted-foreground"}
                             >
                                 {option}
                             </Button>
@@ -321,17 +382,24 @@
             {/if}
 
             <div>
-                <h4 class="text-sm font-medium mb-3">Special Requests</h4>
+                <h4 class="text-sm font-medium text-foreground mb-3">
+                    Special Requests
+                </h4>
                 <Textarea
                     bind:value={customizeNotes}
                     placeholder="E.g., 'No salt', 'Extra crispy'..."
                     rows={3}
+                    class="bg-background border-border"
                 />
             </div>
         </div>
 
-        <Dialog.Footer class="gap-2 sm:gap-0">
-            <Button variant="outline" onclick={() => (showCustomizeModal = false)}>
+        <Dialog.Footer class="gap-3">
+            <Button
+                variant="outline"
+                class="text-muted-foreground"
+                onclick={() => (showCustomizeModal = false)}
+            >
                 Cancel
             </Button>
             <Button onclick={confirmCustomization}>
