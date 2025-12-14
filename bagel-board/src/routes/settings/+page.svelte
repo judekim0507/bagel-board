@@ -154,19 +154,22 @@
 
 <div class="flex-1 flex flex-col overflow-hidden">
     <!-- Header -->
-    <header class="px-6 py-4 border-b flex-none">
-        <div class="flex items-center gap-3">
-            <Settings class="w-6 h-6 text-muted-foreground" />
-            <div>
-                <h1
-                    class="text-3xl font-instrument-serif font-medium text-foreground"
-                >
-                    Settings
-                </h1>
-                <p class="text-sm text-muted-foreground">
-                    Manage system settings and data
-                </p>
-            </div>
+    <header class="px-6 py-6 border-b flex-none">
+        <div>
+            <h1
+                class="text-3xl font-instrument-serif font-medium text-foreground flex items-center gap-2"
+            >
+                <Settings class="w-6 h-6" />
+                Settings
+            </h1>
+            <p class="text-sm text-muted-foreground">
+                Manage system •
+                {#if dbConnected && realtimeConnected}
+                    System Live
+                {:else}
+                    System Offline
+                {/if}
+            </p>
         </div>
     </header>
 

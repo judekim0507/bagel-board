@@ -123,3 +123,8 @@
 .font-instrument-serif {
   font-family: "Instrument Serif", serif;
 }
+
+.font-instrument-serif-italic {
+  font-family: "Instrument Serif", serif;
+  font-style: italic;
+}

@@ -185,7 +185,7 @@
                                 <div class="text-right">
                                     <Badge
                                         variant={getTimerVariant(elapsed)}
-                                        class="font-mono text-lg px-2 py-1 {isOverdue &&
+                                        class="font-mono text-base px-3 py-0.5 {isOverdue &&
                                         order.status !== 'ready'
                                             ? 'animate-pulse'
                                             : ''}"
@@ -194,14 +194,14 @@
                                         {formatTime(elapsed)}
                                     </Badge>
                                     {#if isUrgent && order.status !== "ready"}
-                                        <div
+                                        <!-- <div
                                             class="flex items-center justify-end gap-1 mt-1 text-destructive"
                                         >
                                             <AlertTriangle class="w-3 h-3" />
                                             <span class="text-xs font-semibold"
                                                 >URGENT</span
                                             >
-                                        </div>
+                                        </div> -->
                                     {/if}
                                 </div>
                             </div>

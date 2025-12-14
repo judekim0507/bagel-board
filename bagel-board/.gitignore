@@ -25,3 +25,5 @@ vite.config.ts.timestamp-*
 .mcp.json
 /.claude
 /.vscode
+
+/supabase

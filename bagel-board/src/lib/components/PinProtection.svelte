@@ -25,8 +25,8 @@
         error = false;
     }
 
-    function checkPin() {
-        const success = verifyPin(pin);
+    async function checkPin() {
+        const success = await verifyPin(pin);
 
         if (!success) {
             error = true;

@@ -298,7 +298,7 @@
         </div>
     </div>
 {:else}
-    <div class="flex-1 flex flex-col px-4 pt-5 md:px-6 md:pt-6 overflow-hidden">
+    <div class="flex-1 flex flex-col px-6 pt-6 overflow-hidden">
         <!-- Header -->
         <header class="flex justify-between items-center mb-6 flex-none">
             <div>
@@ -446,7 +446,7 @@
                 </div>
             {/if}
         </div>
-        <div class="h-4 md:h-6"></div>
+        <div class="h-8"></div>
     </div>
 {/if}
 
