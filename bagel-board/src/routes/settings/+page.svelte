@@ -158,7 +158,11 @@
         <div class="flex items-center gap-3">
             <Settings class="w-6 h-6 text-muted-foreground" />
             <div>
-                <h1 class="text-2xl font-semibold text-foreground">Settings</h1>
+                <h1
+                    class="text-3xl font-instrument-serif font-medium text-foreground"
+                >
+                    Settings
+                </h1>
                 <p class="text-sm text-muted-foreground">
                     Manage system settings and data
                 </p>
@@ -266,13 +270,15 @@
                             <Card.Header>
                                 <Card.Title class="flex items-center gap-2"
                                     ><Circle
-                                        class="w-2 h-2 {dbConnected
+                                        class="w-2 h-2 {dbConnected &&
+                                        realtimeConnected
                                             ? 'fill-green-500 text-green-500'
                                             : 'fill-red-500 text-red-500'}"
                                     /> System Information</Card.Title
                                 >
                                 <Card.Description>
-                                    Bagel Board v1.0 • SvelteKit & Supabase
+                                    Bagel Board v1.0 • Powered by SvelteKit &
+                                    Supabase
                                 </Card.Description>
                             </Card.Header>
                             <Card.Content>
@@ -427,7 +433,7 @@
                         </Card.Root>
 
                         <!-- Guidelines -->
-                        <Card.Root>
+                        <!-- <Card.Root>
                             <Card.Header>
                                 <Card.Title>Session Guidelines</Card.Title>
                             </Card.Header>
@@ -480,7 +486,7 @@
                                     </li>
                                 </ul>
                             </Card.Content>
-                        </Card.Root>
+                        </Card.Root> -->
 
                         <!-- Current Session Stats -->
                         <Card.Root>
@@ -586,7 +592,7 @@
                         </Card.Root>
 
                         <!-- Pro Tips -->
-                        <Card.Root class="border-blue-500/30 bg-blue-500/5">
+                        <!-- <Card.Root class="border-blue-500/30 bg-blue-500/5">
                             <Card.Header>
                                 <Card.Title
                                     class="flex items-center gap-2 text-blue-400"
@@ -629,7 +635,7 @@
                                     </li>
                                 </ul>
                             </Card.Content>
-                        </Card.Root>
+                        </Card.Root> -->
                     </div>
                 </Tabs.Content>
 
@@ -701,7 +707,7 @@
                         </Card.Root>
 
                         <!-- Info Box -->
-                        <Card.Root class="border-blue-500/30 bg-blue-500/5">
+                        <!-- <Card.Root class="border-blue-500/30 bg-blue-500/5">
                             <Card.Header>
                                 <Card.Title
                                     class="flex items-center gap-2 text-blue-400"
@@ -745,7 +751,7 @@
                                     </li>
                                 </ul>
                             </Card.Content>
-                        </Card.Root>
+                        </Card.Root> -->
                     </div>
                 </Tabs.Content>
             </Tabs.Root>

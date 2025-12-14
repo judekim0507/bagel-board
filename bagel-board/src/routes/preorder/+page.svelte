@@ -58,23 +58,33 @@
         >
             <!-- Header -->
             <header class="px-6 pt-12 pb-8 text-center flex-none">
-                <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 mb-4">
+                <div
+                    class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 mb-4"
+                >
                     <UtensilsCrossed class="w-7 h-7 text-primary" />
                 </div>
-                <h1 class="text-2xl font-bold tracking-tight text-foreground">Pre-order Breakfast</h1>
+                <h1
+                    class="text-4xl font-medium text-foreground font-instrument-serif"
+                >
+                    Pre-order Breakfast
+                </h1>
                 <p class="text-muted-foreground text-sm mt-1">
-                    Order ahead for faster pickup
+                    Select your name to continue
                 </p>
             </header>
 
             <!-- Search -->
             <div class="px-6 pb-4 flex-none">
                 <div class="max-w-md mx-auto">
-                    <p class="text-sm font-medium text-muted-foreground mb-3 text-center">
+                    <!-- <p
+                        class="text-sm font-medium text-muted-foreground mb-3 text-center"
+                    >
                         Select your name to continue
-                    </p>
+                    </p> -->
                     <div class="relative">
-                        <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Search
+                            class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"
+                        />
                         <Input
                             type="text"
                             placeholder="Search..."
@@ -93,23 +103,31 @@
                         {#each filteredTeachers as teacher}
                             <button
                                 class="w-full flex items-center gap-3 p-3 rounded-xl bg-stone-900 border border-stone-800
-                                       hover:border-stone-700 hover:bg-stone-800 transition-all text-left active:scale-[0.99] group"
+                                       hover:border-stone-700 hover:bg-stone-800 transition-all text-left active:scale-[0.99] group cursor-pointer"
                                 onclick={() => selectTeacher(teacher)}
                             >
-                                <Avatar.Root class="h-10 w-10 flex-shrink-0">
-                                    <Avatar.Fallback class="bg-stone-800 text-foreground font-medium">
+                                <!-- <Avatar.Root class="h-10 w-10 flex-shrink-0">
+                                    <Avatar.Fallback
+                                        class="bg-stone-800 text-foreground font-medium"
+                                    >
                                         {teacher.name[0]}
                                     </Avatar.Fallback>
-                                </Avatar.Root>
-                                <span class="flex-1 font-medium text-foreground">
+                                </Avatar.Root> -->
+                                <span
+                                    class="flex-1 font-medium text-foreground"
+                                >
                                     {teacher.name}
                                 </span>
-                                <ChevronRight class="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                                <ChevronRight
+                                    class="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors"
+                                />
                             </button>
                         {/each}
 
                         {#if filteredTeachers.length === 0}
-                            <div class="py-12 text-center text-muted-foreground">
+                            <div
+                                class="py-12 text-center text-muted-foreground"
+                            >
                                 <p class="text-sm">No results found</p>
                             </div>
                         {/if}
@@ -136,13 +154,18 @@
             in:scale={{ duration: 300, start: 0.95 }}
         >
             <div class="flex flex-col items-center gap-5 text-center px-6">
-                <div class="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center">
+                <div
+                    class="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center"
+                >
                     <Check class="w-8 h-8 text-green-500" />
                 </div>
                 <div>
-                    <h2 class="text-xl font-semibold text-foreground mb-1">Order Received</h2>
+                    <h2 class="text-xl font-semibold text-foreground mb-1">
+                        Order Received
+                    </h2>
                     <p class="text-muted-foreground text-sm max-w-xs">
-                        Thanks, {selectedTeacher?.name}! Your order will be ready when you check in.
+                        Thanks, {selectedTeacher?.name}! Your order will be
+                        ready when you check in.
                     </p>
                 </div>
                 <p class="text-xs text-muted-foreground">

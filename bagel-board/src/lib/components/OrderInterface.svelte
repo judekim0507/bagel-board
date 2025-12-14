@@ -152,7 +152,11 @@
 
         <div class="flex items-center gap-2">
             {#if mode === "preorder"}
-                <Button variant="ghost" onclick={() => dispatch("close")}>
+                <Button
+                    variant="ghost"
+                    onclick={() => dispatch("close")}
+                    class="text-foreground"
+                >
                     <ChevronLeft class="w-4 h-4 mr-1" />
                     Change
                 </Button>
@@ -253,15 +257,18 @@
                 </div>
             </div>
 
-            {#if mode === "preorder"}
+            {#if /*mode === "preorder"*/ true}
                 <div class="p-4 border-b bg-muted/50">
-                    <label class="block text-sm font-medium mb-2">
+                    <label
+                        class="block text-sm font-medium mb-2 text-foreground"
+                    >
                         Dietary Requirements
                     </label>
                     <Input
                         type="text"
                         bind:value={dietaryNotes}
                         placeholder="e.g., Vegetarian, Gluten-free..."
+                        class="text-muted-foreground"
                     />
                 </div>
             {/if}
@@ -274,7 +281,9 @@
                             transition:scale={{ duration: 150, start: 0.95 }}
                         >
                             <div class="flex justify-between items-start mb-1">
-                                <p class="font-medium text-sm flex-1">
+                                <p
+                                    class="font-medium text-sm flex-1 text-foreground"
+                                >
                                     {item.name}
                                 </p>
                                 <Button
@@ -361,18 +370,27 @@
                     </h4>
                     <div class="flex flex-wrap gap-2">
                         {#each selectedItem.toppings_config.options as option}
-                            {@const isSelected = customizeToppings.includes(option)}
+                            {@const isSelected =
+                                customizeToppings.includes(option)}
                             <Button
                                 variant={isSelected ? "default" : "outline"}
                                 size="sm"
                                 onclick={() => {
                                     if (isSelected) {
-                                        customizeToppings = customizeToppings.filter((t) => t !== option);
+                                        customizeToppings =
+                                            customizeToppings.filter(
+                                                (t) => t !== option,
+                                            );
                                     } else {
-                                        customizeToppings = [...customizeToppings, option];
+                                        customizeToppings = [
+                                            ...customizeToppings,
+                                            option,
+                                        ];
                                     }
                                 }}
-                                class={isSelected ? "" : "text-muted-foreground"}
+                                class={isSelected
+                                    ? ""
+                                    : "text-muted-foreground"}
                             >
                                 {option}
                             </Button>

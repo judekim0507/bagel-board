@@ -303,7 +303,7 @@
         <header class="flex justify-between items-center mb-6 flex-none">
             <div>
                 <h1
-                    class="text-foreground text-2xl font-semibold tracking-tight"
+                    class="text-foreground text-3xl font-instrument-serif font-medium"
                 >
                     {selectedTableId ? `Table ${selectedTableId}` : "Tables"}
                 </h1>
@@ -482,7 +482,7 @@
                         type="text"
                         placeholder="Search..."
                         bind:value={searchQuery}
-                        class="pl-9 bg-background border-border"
+                        class="pl-9 bg-background border-border text-foreground"
                         autofocus
                     />
                 </div>

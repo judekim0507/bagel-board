@@ -7,7 +7,7 @@
     import Settings from "lucide-svelte/icons/settings";
 </script>
 
-<nav class="h-full flex items-center justify-center gap-8 mx-auto">
+<nav class="h-full flex items-center justify-center gap-12 mx-auto">
     <a
         href="/"
         class="flex items-center gap-2 px-4 py-2 rounded-lg transition-all
