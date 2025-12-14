@@ -27,6 +27,8 @@
 		href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
 		rel="stylesheet"
 	/>
+	<link rel="icon" type="image/png" href="/favicon.png" />
+	<title>Bagel Board</title>
 </svelte:head>
 
 <div
