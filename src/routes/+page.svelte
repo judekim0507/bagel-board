@@ -65,7 +65,19 @@
 
     $: {
         const currentReadyOrders = $orders.filter((o) => o.status === "ready");
+        const readyOrderIds = new Set(currentReadyOrders.map((o) => o.id));
 
+        // Remove panels and notifiedOrderIds for orders that are no longer ready
+        for (const panel of readyOrderPanels) {
+            if (!readyOrderIds.has(panel.order.id)) {
+                notifiedOrderIds.delete(panel.order.id);
+            }
+        }
+        readyOrderPanels = readyOrderPanels.filter((panel) =>
+            readyOrderIds.has(panel.order.id)
+        );
+
+        // Add new panels for newly ready orders
         for (const order of currentReadyOrders) {
             if (!notifiedOrderIds.has(order.id)) {
                 notifiedOrderIds.add(order.id);
@@ -141,6 +153,13 @@
     }
 
     function handleTableClick(id: number) {
+        const assignedTables = getAssignedTables();
+        if (assignedTables.length > 0 && !assignedTables.includes(id)) {
+            toast.error(`Table ${id} is not assigned to you`, {
+                description: "Go to Settings to assign yourself to this table.",
+            });
+            return;
+        }
         selectedTableId = id;
     }
 
@@ -343,15 +362,17 @@
                 >
                     {#each tableIds as id}
                         {@const status = getTableOccupancy(id)}
-                        {@const isAssigned = getAssignedTables().includes(id)}
+                        {@const assignedTables = getAssignedTables()}
+                        {@const isAssigned = assignedTables.length === 0 || assignedTables.includes(id)}
                         <button
-                            class="group relative aspect-square rounded-xl border-2 bg-card hover:bg-accent transition-all active:scale-[0.98] flex flex-col items-center justify-center gap-1
-                                   {status.hasAnyone
+                            class="group relative aspect-square rounded-xl border-2 transition-all flex flex-col items-center justify-center gap-1
+                                   {isAssigned ? 'bg-card hover:bg-accent active:scale-[0.98]' : 'bg-muted/30 opacity-50 cursor-not-allowed'}
+                                   {status.hasAnyone && isAssigned
                                 ? 'border-primary bg-primary/5'
                                 : 'border-border'}"
                             onclick={() => handleTableClick(id)}
                         >
-                            {#if isAssigned}
+                            {#if assignedTables.includes(id)}
                                 <Star
                                     class="absolute top-2 left-2 w-4 h-4 text-primary fill-primary"
                                 />

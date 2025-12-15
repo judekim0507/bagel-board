@@ -103,6 +103,7 @@
                       seat_id: seatId,
                       device_id: deviceId,
                       items: cart,
+                      dietary_notes: dietaryNotes,
                   };
 
         const res = await fetch(endpoint, {
@@ -181,10 +182,10 @@
         </div>
     </header>
 
-    <div class="flex-1 flex overflow-hidden">
+    <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
         <!-- Menu -->
-        <div class="flex-1 overflow-hidden flex flex-col">
-            <ScrollArea class="flex-1 p-6">
+        <div class="flex-1 overflow-hidden flex flex-col min-h-0">
+            <ScrollArea class="flex-1 p-4 md:p-6">
                 <div class="space-y-8">
                     {#each groupedItems as group}
                         {#if group.items.length > 0}
@@ -201,16 +202,16 @@
                                     </h3>
                                 </div>
                                 <div
-                                    class="grid grid-cols-2 lg:grid-cols-3 gap-3"
+                                    class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
                                 >
                                     {#each group.items as item}
                                         <button
-                                            class="group relative bg-card border rounded-xl p-4 text-left hover:border-primary hover:bg-accent transition-all active:scale-[0.98]"
+                                            class="group relative bg-card border rounded-xl p-4 text-left hover:border-primary hover:bg-accent transition-all active:scale-[0.98] overflow-hidden"
                                             on:click={() =>
                                                 openCustomizeModal(item)}
                                         >
                                             <p
-                                                class="font-medium text-foreground"
+                                                class="font-medium text-foreground break-words"
                                             >
                                                 {item.name}
                                             </p>
@@ -249,7 +250,7 @@
         </div>
 
         <!-- Cart Sidebar -->
-        <div class="w-80 lg:w-96 border-l bg-card flex flex-col flex-none">
+        <div class="w-full md:w-[min(384px,40vw)] border-t md:border-t-0 md:border-l bg-card flex flex-col flex-none max-h-[50vh] md:max-h-none overflow-hidden">
             <div class="p-4 border-b">
                 <div class="flex items-center justify-between">
                     <h3 class="font-semibold text-foreground">Order</h3>
@@ -273,16 +274,16 @@
                 </div>
             {/if}
 
-            <ScrollArea class="flex-1">
+            <ScrollArea class="flex-1 min-h-0">
                 <div class="p-4 space-y-2">
                     {#each cart as item, i (i)}
                         <div
-                            class="group bg-background border rounded-lg p-3 hover:border-primary/50 transition-colors"
+                            class="group bg-background border rounded-lg p-3 hover:border-primary/50 transition-colors overflow-hidden"
                             transition:scale={{ duration: 150, start: 0.95 }}
                         >
-                            <div class="flex justify-between items-start mb-1">
+                            <div class="flex justify-between items-start mb-1 gap-2">
                                 <p
-                                    class="font-medium text-sm flex-1 text-foreground"
+                                    class="font-medium text-sm flex-1 text-foreground break-words min-w-0"
                                 >
                                     {item.name}
                                 </p>
@@ -308,7 +309,7 @@
                                 </div>
                             {/if}
                             {#if item.notes}
-                                <p class="text-xs text-muted-foreground italic">
+                                <p class="text-xs text-muted-foreground italic break-words">
                                     "{item.notes}"
                                 </p>
                             {/if}
@@ -352,7 +353,7 @@
 
 <!-- Customization Modal -->
 <Dialog.Root bind:open={showCustomizeModal}>
-    <Dialog.Content class="sm:max-w-lg dark bg-card border-border">
+    <Dialog.Content class="w-[calc(100vw-2rem)] max-w-lg dark bg-card border-border">
         <Dialog.Header>
             <Dialog.Title class="text-foreground"
                 >Customize {selectedItem?.name}</Dialog.Title

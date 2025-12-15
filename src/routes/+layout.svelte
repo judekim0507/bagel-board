@@ -34,7 +34,7 @@
 <div
 	class="dark h-screen w-full antialiased overflow-hidden flex items-center justify-center bg-stone-950"
 >
-	<Toaster richColors position="top-center" />
+	<Toaster richColors position="top-center" theme="dark" />
 
 	{#if isPreorderRoute}
 		<!-- Preorder Route - Dark theme, standalone, no nav -->

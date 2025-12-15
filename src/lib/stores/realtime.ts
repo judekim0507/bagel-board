@@ -40,6 +40,13 @@ async function setupRealtime() {
         .subscribe();
 
     supabase
+        .channel('public:order_items')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'order_items' }, () => {
+            fetchOrders();
+        })
+        .subscribe();
+
+    supabase
         .channel('public:seat_assignments')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'seat_assignments' }, () => {
             fetchSeatAssignments();

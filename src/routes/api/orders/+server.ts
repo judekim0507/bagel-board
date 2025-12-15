@@ -2,10 +2,18 @@ import { json } from '@sveltejs/kit';
 import { supabase } from '$lib/supabase';
 
 export async function POST({ request }) {
-    const { teacher_id, seat_id, device_id, items } = await request.json();
+    const { teacher_id, seat_id, device_id, items, dietary_notes } = await request.json();
 
     if (!teacher_id || !items || items.length === 0) {
         return json({ error: 'Invalid order data' }, { status: 400 });
+    }
+
+    // Update teacher's dietary notes if provided
+    if (dietary_notes !== undefined) {
+        await supabase
+            .from('teachers')
+            .update({ dietary_notes: dietary_notes || null })
+            .eq('id', teacher_id);
     }
 
     // 1. Create Order

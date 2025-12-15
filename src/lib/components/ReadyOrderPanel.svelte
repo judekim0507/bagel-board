@@ -6,7 +6,6 @@
     import { Button } from "$lib/components/ui/button/index.js";
     import * as Card from "$lib/components/ui/card/index.js";
     import { Badge } from "$lib/components/ui/badge/index.js";
-    import { ScrollArea } from "$lib/components/ui/scroll-area/index.js";
 
     // Icons
     import Check from "lucide-svelte/icons/check";
@@ -36,7 +35,7 @@
 {#if isMinimized}
     <!-- Minimized Tab -->
     <button
-        class="fixed right-0 z-50 bg-card border border-border border-r-0 rounded-l-xl shadow-lg
+        class="fixed right-0 z-[60] bg-card border border-border border-r-0 rounded-l-xl shadow-lg
                hover:bg-accent transition-all group"
         style="top: calc(40% + {stackIndex * 70}px);"
         onclick={() => dispatch("restore")}
@@ -63,7 +62,7 @@
 {:else}
     <!-- Dimmed Overlay -->
     <button
-        class="fixed inset-0 bg-black/50 z-40"
+        class="fixed inset-0 bg-black/50 z-[55]"
         onclick={minimize}
         transition:fade={{ duration: 150 }}
         aria-label="Minimize panel"
@@ -71,7 +70,7 @@
 
     <!-- Side Panel -->
     <div
-        class="fixed top-0 right-0 bottom-0 w-full md:w-[400px] bg-card z-50 flex flex-col shadow-2xl border-l border-border"
+        class="fixed top-0 right-0 bottom-0 w-full max-w-full md:w-[min(400px,100vw)] bg-card z-[60] flex flex-col shadow-2xl border-l border-border overflow-hidden"
         transition:fly={{ x: 400, duration: 250 }}
     >
         <!-- Header -->
@@ -112,7 +111,7 @@
         </header>
 
         <!-- Content -->
-        <ScrollArea class="flex-1">
+        <div class="flex-1 overflow-y-auto min-h-0">
             <div class="p-5 space-y-4">
                 <!-- Teacher -->
                 <div class="space-y-2">
@@ -153,8 +152,8 @@
                     </p>
 
                     {#each order.order_items || [] as item}
-                        <div class="p-3 rounded-lg bg-muted/30 border">
-                            <p class="font-medium text-foreground">
+                        <div class="p-3 rounded-lg bg-muted/30 border overflow-hidden">
+                            <p class="font-medium text-foreground break-words">
                                 {item.menu_items?.name || "Unknown Item"}
                             </p>
 
@@ -172,7 +171,7 @@
                             {/if}
 
                             {#if item.notes}
-                                <p class="text-sm text-yellow-500 mt-2 italic">
+                                <p class="text-sm text-yellow-500 mt-2 italic break-words">
                                     "{item.notes}"
                                 </p>
                             {/if}
@@ -180,7 +179,7 @@
                     {/each}
                 </div>
             </div>
-        </ScrollArea>
+        </div>
 
         <!-- Footer -->
         <div class="p-5 border-t flex-none">

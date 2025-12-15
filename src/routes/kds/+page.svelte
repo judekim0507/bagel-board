@@ -17,6 +17,7 @@
     import AlertTriangle from "lucide-svelte/icons/alert-triangle";
     import ChefHat from "lucide-svelte/icons/chef-hat";
     import PartyPopper from "lucide-svelte/icons/party-popper";
+    import Undo2 from "lucide-svelte/icons/undo-2";
 
     let now = Date.now();
     let interval: any;
@@ -116,9 +117,22 @@
             toast.error("Failed to update order");
         }
     }
+
+    async function undoReady(orderId: string) {
+        const res = await fetch("/api/orders/status", {
+            method: "POST",
+            body: JSON.stringify({ order_id: orderId, status: "pending" }),
+        });
+
+        if (res.ok) {
+            toast.info("Order moved back to queue");
+        } else {
+            toast.error("Failed to update order");
+        }
+    }
 </script>
 
-<div class="flex-1 p-6 overflow-hidden flex flex-col">
+<div class="flex-1 p-4 md:p-6 overflow-hidden flex flex-col max-h-full">
     <!-- Header -->
     <header class="mb-6 flex justify-between items-center flex-none">
         <div>
@@ -147,7 +161,7 @@
     </header>
 
     <!-- Orders -->
-    <ScrollArea class="flex-1" orientation="horizontal">
+    <div class="flex-1 overflow-x-auto overflow-y-hidden min-h-0">
         <div class="flex gap-4 pb-4 h-full">
             {#each activeOrders as order (order.id)}
                 {@const elapsed = order.elapsed}
@@ -155,19 +169,19 @@
                 {@const isOverdue = elapsed > 120}
 
                 <div
-                    class="h-full"
+                    class="h-full flex-shrink-0"
                     in:scale={{ duration: 200, start: 0.95 }}
                     out:slide={{ axis: "x", duration: 300 }}
                 >
                     <Card.Root
-                        class="w-80 h-full flex-none flex flex-col {getCardBorder(
+                        class="w-[min(320px,calc(100vw-2rem))] h-full flex flex-col overflow-hidden {getCardBorder(
                             elapsed,
                             order.status,
                         )} {isOverdue && order.status !== 'ready'
                             ? 'animate-pulse'
                             : ''}"
                     >
-                        <Card.Header class="pb-3">
+                        <Card.Header class="pb-3 flex-shrink-0">
                             <div class="flex justify-between items-start">
                                 <div>
                                     <Card.Title class="flex items-center gap-2">
@@ -221,15 +235,15 @@
                             {/if}
                         </Card.Header>
 
-                        <Card.Content class="flex-1 overflow-hidden">
-                            <ScrollArea class="h-full max-h-[180px]">
+                        <Card.Content class="flex-1 overflow-hidden min-h-0">
+                            <ScrollArea class="h-full">
                                 <div class="space-y-2">
-                                    {#each order.order_items as item}
+                                    {#each order.order_items || [] as item}
                                         <div
-                                            class="bg-muted/50 border rounded-lg p-3"
+                                            class="bg-muted/50 border rounded-lg p-3 overflow-hidden"
                                         >
                                             <p
-                                                class="font-semibold text-foreground"
+                                                class="font-semibold text-foreground break-words"
                                             >
                                                 {item.menu_items?.name ||
                                                     "Unknown Item"}
@@ -250,7 +264,7 @@
                                             {/if}
                                             {#if item.notes}
                                                 <div
-                                                    class="mt-2 text-sm bg-yellow-500/10 text-yellow-400 border border-yellow-500/30 rounded px-2 py-1"
+                                                    class="mt-2 text-sm bg-yellow-500/10 text-yellow-400 border border-yellow-500/30 rounded px-2 py-1 break-words"
                                                 >
                                                     "{item.notes}"
                                                 </div>
@@ -261,7 +275,7 @@
                             </ScrollArea>
                         </Card.Content>
 
-                        <Card.Footer class="pt-3">
+                        <Card.Footer class="pt-3 flex-shrink-0">
                             {#if order.status === "pending" || order.status === "preparing"}
                                 <Button
                                     class="w-full"
@@ -272,14 +286,24 @@
                                     Mark Ready
                                 </Button>
                             {:else if order.status === "ready"}
-                                <Button
-                                    class="w-full bg-green-500 hover:bg-green-600"
-                                    size="lg"
-                                    onclick={() => markServed(order.id)}
-                                >
-                                    <Check class="w-4 h-4 mr-2" />
-                                    Complete
-                                </Button>
+                                <div class="flex gap-2 w-full">
+                                    <Button
+                                        variant="outline"
+                                        size="lg"
+                                        onclick={() => undoReady(order.id)}
+                                        class="flex-shrink-0"
+                                    >
+                                        <Undo2 class="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                        class="flex-1 bg-green-500 hover:bg-green-600"
+                                        size="lg"
+                                        onclick={() => markServed(order.id)}
+                                    >
+                                        <Check class="w-4 h-4 mr-2" />
+                                        Complete
+                                    </Button>
+                                </div>
                             {/if}
                         </Card.Footer>
                     </Card.Root>
@@ -288,7 +312,7 @@
 
             {#if activeOrders.length === 0}
                 <div
-                    class="flex-1 flex flex-col items-center justify-center text-muted-foreground min-w-[400px]"
+                    class="flex-1 flex flex-col items-center justify-center text-muted-foreground min-w-[300px]"
                 >
                     <PartyPopper class="w-16 h-16 mb-4 opacity-30" />
                     <p class="text-xl font-semibold">All caught up!</p>
@@ -296,5 +320,5 @@
                 </div>
             {/if}
         </div>
-    </ScrollArea>
+    </div>
 </div>
