@@ -1,3 +1,4 @@
+![Cover](/static/og.png)
 # 🥯 Bagel Board
 
 Real-time breakfast ordering system for BNSS Student Gov. Three modes: **Waiter**, **Kitchen Display**, and **Pre-order**.
