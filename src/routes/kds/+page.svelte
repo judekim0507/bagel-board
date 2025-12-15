@@ -116,19 +116,6 @@
         }
     }
 
-    async function markServed(orderId: string) {
-        const res = await fetch("/api/orders/status", {
-            method: "POST",
-            body: JSON.stringify({ order_id: orderId, status: "served" }),
-        });
-
-        if (res.ok) {
-            toast.success("Order completed!");
-        } else {
-            toast.error("Failed to update order");
-        }
-    }
-
     async function undoReady(orderId: string) {
         const res = await fetch("/api/orders/status", {
             method: "POST",
@@ -297,24 +284,15 @@
                                     Mark Ready
                                 </Button>
                             {:else if order.status === "ready"}
-                                <div class="flex gap-2 w-full">
-                                    <Button
-                                        variant="outline"
-                                        size="lg"
-                                        onclick={() => undoReady(order.id)}
-                                        class="flex-shrink-0"
-                                    >
-                                        <Undo2 class="w-4 h-4" />
-                                    </Button>
-                                    <Button
-                                        class="flex-1 bg-green-500 hover:bg-green-600"
-                                        size="lg"
-                                        onclick={() => markServed(order.id)}
-                                    >
-                                        <Check class="w-4 h-4 mr-2" />
-                                        Complete
-                                    </Button>
-                                </div>
+                                <Button
+                                    variant="outline"
+                                    size="lg"
+                                    onclick={() => undoReady(order.id)}
+                                    class="w-full"
+                                >
+                                    <Undo2 class="w-4 h-4 mr-2" />
+                                    Undo
+                                </Button>
                             {/if}
                         </Card.Footer>
                     </Card.Root>

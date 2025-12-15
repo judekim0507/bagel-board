@@ -27,8 +27,19 @@
 		href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
 		rel="stylesheet"
 	/>
+
 	<link rel="icon" type="image/png" href="/favicon.png" />
 	<title>Bagel Board</title>
+	<meta property="og:image" content="/og.png" />
+	<meta property="og:title" content="Bagel Board" />
+	<meta
+		property="og:description"
+		content="Real-time Staff Breakfast ordering for BNSS Student Gov with waiter, kitchen display, and pre-order modes."
+	/>
+	<meta property="og:type" content="website" />
+	<meta property="og:url" content="https://bagel-board.judekim.ca" />
+	<meta property="og:site_name" content="Bagel Board" />
+	<meta property="og:locale" content="en_US" />
 </svelte:head>
 
 <div

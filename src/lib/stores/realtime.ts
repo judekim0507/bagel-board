@@ -52,11 +52,34 @@ async function setupRealtime() {
             fetchSeatAssignments();
         })
         .subscribe();
+
+    supabase
+        .channel('public:system_config')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'system_config' }, () => {
+            // Refetch orders when session is reset
+            fetchOrders();
+            fetchSeatAssignments();
+        })
+        .subscribe();
 }
 
 export async function fetchOrders() {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // Get session start time from system_config
+    const { data: configData } = await supabase
+        .from('system_config')
+        .select('value')
+        .eq('key', 'session_start_time')
+        .single();
+
+    // Use session start time if available, otherwise use start of today
+    let startTime: string;
+    if (configData?.value) {
+        startTime = configData.value;
+    } else {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        startTime = today.toISOString();
+    }
 
     const { data, error } = await supabase
         .from('orders')
@@ -67,7 +90,7 @@ export async function fetchOrders() {
                 menu_items (*)
             )
         `)
-        .gte('created_at', today.toISOString())
+        .gte('created_at', startTime)
         .order('created_at', { ascending: true });
 
     if (!error && data) {

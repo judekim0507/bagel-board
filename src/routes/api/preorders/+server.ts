@@ -7,7 +7,7 @@ export async function GET({ url }) {
 
     let query = supabase
         .from("pre_orders")
-        .select("*, pre_order_items(*)")
+        .select("*, pre_order_items(*, menu_items(*))")
         .order("created_at", { ascending: false });
 
     if (teacherId) {

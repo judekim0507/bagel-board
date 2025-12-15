@@ -1,13 +1,15 @@
 <script lang="ts">
     import { menuItems, fetchMenu } from "$lib/stores/menu";
+    import { orders } from "$lib/stores/realtime";
     import { onMount, createEventDispatcher } from "svelte";
-    import { scale } from "svelte/transition";
+    import { scale, slide } from "svelte/transition";
     import { toast } from "svelte-sonner";
 
     // shadcn-svelte components
     import { Button } from "$lib/components/ui/button/index.js";
     import * as Dialog from "$lib/components/ui/dialog/index.js";
     import * as Avatar from "$lib/components/ui/avatar/index.js";
+    import * as Tabs from "$lib/components/ui/tabs/index.js";
     import { Input } from "$lib/components/ui/input/index.js";
     import { Textarea } from "$lib/components/ui/textarea/index.js";
     import { Badge } from "$lib/components/ui/badge/index.js";
@@ -24,25 +26,69 @@
     import ShoppingBag from "lucide-svelte/icons/shopping-bag";
     import UtensilsCrossed from "lucide-svelte/icons/utensils-crossed";
     import Coffee from "lucide-svelte/icons/coffee";
+    import Clock from "lucide-svelte/icons/clock";
+    import ChefHat from "lucide-svelte/icons/chef-hat";
+    import Check from "lucide-svelte/icons/check";
+    import History from "lucide-svelte/icons/history";
 
     export let teacher: any;
     export let seatId: string = "";
     export let deviceId: string;
     export let mode: "waiter" | "preorder" = "waiter";
     export let headerTitle: string = "New Order";
+    export let initialCart: any[] = [];
+    export let existingPreorderId: string = "";
 
     const dispatch = createEventDispatcher();
 
-    let cart: any[] = [];
+    let cart: any[] = initialCart;
     let submitting = false;
     let selectedItem: any = null;
     let showCustomizeModal = false;
     let customizeToppings: string[] = [];
     let customizeNotes = "";
     let dietaryNotes = teacher?.dietary_notes || "";
+    let activeTab = "menu";
+
+    // Get orders for this seat (live updated via store)
+    $: seatOrders = mode === "waiter" && seatId
+        ? $orders.filter((o) => o.seat_id === seatId).sort((a, b) =>
+            new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+          )
+        : [];
+
+    $: hasOrderHistory = seatOrders.length > 0;
+
+    function getStatusBadge(status: string) {
+        switch (status) {
+            case "pending":
+                return { label: "In Queue", class: "bg-orange-500/20 text-orange-400 border-orange-500/30" };
+            case "preparing":
+                return { label: "Preparing", class: "bg-blue-500/20 text-blue-400 border-blue-500/30" };
+            case "ready":
+                return { label: "Ready", class: "bg-green-500/20 text-green-400 border-green-500/30" };
+            case "served":
+                return { label: "Served", class: "bg-muted text-muted-foreground border-border" };
+            default:
+                return { label: status, class: "bg-muted text-muted-foreground border-border" };
+        }
+    }
+
+    function getStatusIcon(status: string) {
+        switch (status) {
+            case "pending": return Clock;
+            case "preparing": return ChefHat;
+            case "ready": return Check;
+            case "served": return Check;
+            default: return Clock;
+        }
+    }
 
     onMount(() => {
         fetchMenu();
+        if (initialCart.length > 0) {
+            cart = [...initialCart];
+        }
     });
 
     $: categories = ["meal", "drink"];
@@ -89,6 +135,13 @@
         if (cart.length === 0) return;
         submitting = true;
 
+        // If editing an existing preorder, delete it first
+        if (existingPreorderId) {
+            await fetch(`/api/preorders/${existingPreorderId}`, {
+                method: "DELETE",
+            });
+        }
+
         const endpoint = mode === "preorder" ? "/api/preorders" : "/api/orders";
         const payload =
             mode === "preorder"
@@ -115,9 +168,11 @@
 
         if (res.ok) {
             toast.success(
-                mode === "preorder"
-                    ? "Pre-order submitted!"
-                    : "Order sent to kitchen!",
+                existingPreorderId
+                    ? "Pre-order updated!"
+                    : mode === "preorder"
+                      ? "Pre-order submitted!"
+                      : "Order sent to kitchen!",
             );
             dispatch("complete");
         } else {
@@ -183,8 +238,34 @@
     </header>
 
     <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
-        <!-- Menu -->
+        <!-- Menu / Order History -->
         <div class="flex-1 overflow-hidden flex flex-col min-h-0">
+            {#if mode === "waiter" && hasOrderHistory}
+                <!-- Tabs for waiter mode with order history -->
+                <div class="px-4 md:px-6 pt-4 flex-shrink-0 border-b">
+                    <Tabs.Root bind:value={activeTab}>
+                        <Tabs.List class="w-full justify-start bg-transparent p-0 h-auto">
+                            <Tabs.Trigger
+                                value="menu"
+                                class="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 pb-3"
+                            >
+                                <UtensilsCrossed class="w-4 h-4 mr-2" />
+                                Menu
+                            </Tabs.Trigger>
+                            <Tabs.Trigger
+                                value="history"
+                                class="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 pb-3"
+                            >
+                                <History class="w-4 h-4 mr-2" />
+                                Orders
+                                <Badge variant="secondary" class="ml-2 text-xs">{seatOrders.length}</Badge>
+                            </Tabs.Trigger>
+                        </Tabs.List>
+                    </Tabs.Root>
+                </div>
+            {/if}
+
+            {#if activeTab === "menu" || mode === "preorder" || !hasOrderHistory}
             <ScrollArea class="flex-1 p-4 md:p-6">
                 <div class="space-y-8">
                     {#each groupedItems as group}
@@ -247,6 +328,91 @@
                     {/if}
                 </div>
             </ScrollArea>
+            {:else if activeTab === "history"}
+            <!-- Order History Tab -->
+            <ScrollArea class="flex-1 p-4 md:p-6">
+                <div class="space-y-4">
+                    {#each seatOrders as order (order.id)}
+                        {@const statusBadge = getStatusBadge(order.status)}
+                        {@const StatusIcon = getStatusIcon(order.status)}
+                        <div
+                            class="rounded-xl border bg-card overflow-hidden"
+                            transition:slide={{ duration: 200 }}
+                        >
+                            <!-- Order Header -->
+                            <div class="p-4 border-b bg-muted/30 flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-full flex items-center justify-center {
+                                        order.status === 'ready' ? 'bg-green-500/20' :
+                                        order.status === 'pending' ? 'bg-orange-500/20' :
+                                        order.status === 'preparing' ? 'bg-blue-500/20' :
+                                        'bg-muted'
+                                    }">
+                                        <svelte:component
+                                            this={StatusIcon}
+                                            class="w-4 h-4 {
+                                                order.status === 'ready' ? 'text-green-500' :
+                                                order.status === 'pending' ? 'text-orange-400' :
+                                                order.status === 'preparing' ? 'text-blue-400' :
+                                                'text-muted-foreground'
+                                            }"
+                                        />
+                                    </div>
+                                    <div>
+                                        <Badge class="{statusBadge.class} border">
+                                            {statusBadge.label}
+                                        </Badge>
+                                        <p class="text-xs text-muted-foreground mt-1">
+                                            {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </p>
+                                    </div>
+                                </div>
+                                <Badge variant="outline" class="text-xs">
+                                    {order.order_items?.length || 0} items
+                                </Badge>
+                            </div>
+
+                            <!-- Order Items -->
+                            <div class="p-4 space-y-2">
+                                {#each order.order_items || [] as item}
+                                    <div class="flex items-start gap-3 p-2 rounded-lg bg-muted/30">
+                                        <div class="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                            {#if item.menu_items?.category === "drink"}
+                                                <Coffee class="w-3 h-3 text-primary" />
+                                            {:else}
+                                                <UtensilsCrossed class="w-3 h-3 text-primary" />
+                                            {/if}
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="font-medium text-sm text-foreground break-words">
+                                                {item.menu_items?.name || "Unknown Item"}
+                                            </p>
+                                            {#if item.toppings && item.toppings.length > 0}
+                                                <div class="flex flex-wrap gap-1 mt-1">
+                                                    {#each item.toppings as topping}
+                                                        <Badge variant="secondary" class="text-xs py-0">{topping}</Badge>
+                                                    {/each}
+                                                </div>
+                                            {/if}
+                                            {#if item.notes}
+                                                <p class="text-xs text-yellow-500 mt-1 italic break-words">"{item.notes}"</p>
+                                            {/if}
+                                        </div>
+                                    </div>
+                                {/each}
+                            </div>
+                        </div>
+                    {/each}
+
+                    {#if seatOrders.length === 0}
+                        <div class="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                            <History class="w-12 h-12 mb-3 opacity-30" />
+                            <p>No orders yet</p>
+                        </div>
+                    {/if}
+                </div>
+            </ScrollArea>
+            {/if}
         </div>
 
         <!-- Cart Sidebar -->
@@ -338,12 +504,14 @@
                         <div
                             class="animate-spin rounded-full h-4 w-4 border-2 border-primary-foreground border-t-transparent mr-2"
                         ></div>
-                        Submitting...
+                        {existingPreorderId ? "Updating..." : "Submitting..."}
                     {:else}
                         <Send class="w-4 h-4 mr-2" />
-                        {mode === "preorder"
-                            ? "Place Pre-order"
-                            : "Submit Order"}
+                        {existingPreorderId
+                            ? "Update Order"
+                            : mode === "preorder"
+                              ? "Place Pre-order"
+                              : "Submit Order"}
                     {/if}
                 </Button>
             </div>

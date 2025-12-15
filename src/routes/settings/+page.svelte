@@ -97,20 +97,33 @@
 
     async function resetSession() {
         const confirmed = confirm(
-            "This will:\n• Check out all teachers\n• Mark all orders as served\n• Reset the session for a new meal\n\nAre you sure?",
+            "This will:\n• Check out all teachers\n• Mark all orders as served\n• Clear all pre-orders\n• Reset the session for a new meal\n\nAre you sure?",
         );
 
         if (!confirmed) return;
 
+        // Check out all teachers
         await supabase
             .from("seat_assignments")
             .update({ active: false })
             .eq("active", true);
 
+        // Mark all orders as served
         await supabase
             .from("orders")
             .update({ status: "served" })
             .neq("status", "served");
+
+        // Mark all preorders as fulfilled
+        await supabase
+            .from("pre_orders")
+            .update({ fulfilled: true })
+            .eq("fulfilled", false);
+
+        // Store session start time in system_config
+        await supabase
+            .from("system_config")
+            .upsert({ key: "session_start_time", value: new Date().toISOString() });
 
         toast.success("Session reset successfully!");
         await loadStats();
@@ -434,7 +447,7 @@
                                             Active Assignments
                                         </p>
                                         <p
-                                            class="text-2xl font-bold text-green-500"
+                                            class="text-2xl font-bold text-foreground"
                                         >
                                             {stats.activeSeats}
                                         </p>
@@ -446,7 +459,7 @@
                                             Orders Today
                                         </p>
                                         <p
-                                            class="text-2xl font-bold text-orange-500"
+                                            class="text-2xl font-bold text-foreground"
                                         >
                                             {stats.todayOrders}
                                         </p>
