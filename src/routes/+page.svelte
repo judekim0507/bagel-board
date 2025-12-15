@@ -23,7 +23,6 @@
     import { Button } from "$lib/components/ui/button/index.js";
     import * as Card from "$lib/components/ui/card/index.js";
     import * as Dialog from "$lib/components/ui/dialog/index.js";
-    import * as Avatar from "$lib/components/ui/avatar/index.js";
     import { Input } from "$lib/components/ui/input/index.js";
     import { Textarea } from "$lib/components/ui/textarea/index.js";
     import { Badge } from "$lib/components/ui/badge/index.js";
@@ -35,6 +34,7 @@
     import LogOut from "lucide-svelte/icons/log-out";
     import Users from "lucide-svelte/icons/users";
     import Search from "lucide-svelte/icons/search";
+    import ShoppingBag from "lucide-svelte/icons/shopping-bag";
 
     let selectedTableId: number | null = null;
     let selectedSeatId: string | null = null;
@@ -54,10 +54,20 @@
     }> = [];
     let tableIds: number[] = [];
     let seatTeacherMap = new Map();
+    let preorderTeacherIds = new Set<string>();
+
+    async function fetchPreorders() {
+        const res = await fetch("/api/preorders?fulfilled=false");
+        if (res.ok) {
+            const data = await res.json();
+            preorderTeacherIds = new Set(data.map((p: any) => p.teacher_id));
+        }
+    }
 
     onMount(async () => {
         await initRealtime();
         await fetchTeachers();
+        await fetchPreorders();
         loading = false;
 
         const currentReady = $orders.filter((o) => o.status === "ready");
@@ -487,7 +497,7 @@
         }
     }}
 >
-    <Dialog.Content class="sm:max-w-md dark bg-card border-border">
+    <Dialog.Content class="sm:max-w-md dark bg-card border-border overflow-visible">
         <Dialog.Header>
             <Dialog.Title class="text-foreground">
                 {editingDietary ? "Dietary Requirements" : "Check In"}
@@ -514,14 +524,15 @@
                     />
                 </div>
 
-                <ScrollArea class="h-[280px]">
-                    <div class="space-y-1 pr-3">
+                <div style="max-height: 300px; overflow-y: scroll;">
+                    <div class="space-y-1">
                         {#each filteredTeachers as teacher}
                             {@const alreadyCheckedIn = $seatAssignments.some(
                                 (a) => a.teacher_id === teacher.id && a.active,
                             )}
+                            {@const hasPreorder = preorderTeacherIds.has(teacher.id)}
                             <button
-                                class="w-full flex items-center gap-3 p-2.5 rounded-lg transition-colors text-left
+                                class="w-full flex items-center gap-3 p-3 rounded-lg transition-colors text-left
                                        {alreadyCheckedIn
                                     ? 'opacity-40 cursor-not-allowed'
                                     : 'hover:bg-muted'}"
@@ -533,29 +544,24 @@
                                     editingDietary = true;
                                 }}
                             >
-                                <Avatar.Root class="h-9 w-9 flex-shrink-0">
-                                    <Avatar.Fallback
-                                        class="bg-muted text-foreground text-sm font-medium"
-                                    >
-                                        {teacher.name[0]}
-                                    </Avatar.Fallback>
-                                </Avatar.Root>
                                 <div class="flex-1 min-w-0">
-                                    <p
-                                        class="font-medium text-foreground text-sm truncate"
-                                    >
-                                        {teacher.name}
-                                    </p>
+                                    <div class="flex items-center gap-2">
+                                        <p class="font-medium text-foreground text-sm truncate">
+                                            {teacher.name}
+                                        </p>
+                                        {#if hasPreorder}
+                                            <Badge class="text-xs bg-green-500/20 text-green-400 border-green-500/30">
+                                                <ShoppingBag class="w-3 h-3 mr-1" />
+                                                Pre-order
+                                            </Badge>
+                                        {/if}
+                                    </div>
                                     {#if alreadyCheckedIn}
-                                        <p
-                                            class="text-xs text-muted-foreground"
-                                        >
+                                        <p class="text-xs text-muted-foreground">
                                             Already checked in
                                         </p>
                                     {:else if teacher.dietary_notes}
-                                        <p
-                                            class="text-xs text-orange-400 truncate"
-                                        >
+                                        <p class="text-xs text-orange-400 truncate">
                                             {teacher.dietary_notes}
                                         </p>
                                     {/if}
@@ -564,27 +570,16 @@
                         {/each}
 
                         {#if filteredTeachers.length === 0}
-                            <div
-                                class="py-8 text-center text-muted-foreground text-sm"
-                            >
+                            <div class="py-8 text-center text-muted-foreground text-sm">
                                 No teachers found
                             </div>
                         {/if}
                     </div>
-                </ScrollArea>
+                </div>
             </div>
         {:else}
             <div class="space-y-4">
-                <div
-                    class="flex items-center gap-3 p-3 bg-muted/50 rounded-lg border"
-                >
-                    <Avatar.Root class="h-10 w-10">
-                        <Avatar.Fallback
-                            class="bg-primary text-primary-foreground font-medium"
-                        >
-                            {selectedTeacher?.name?.[0]}
-                        </Avatar.Fallback>
-                    </Avatar.Root>
+                <div class="flex items-center justify-between p-3 rounded-lg border bg-muted/50">
                     <div>
                         <p class="font-medium text-foreground">
                             {selectedTeacher?.name}
@@ -593,6 +588,12 @@
                             Ready to check in
                         </p>
                     </div>
+                    {#if preorderTeacherIds.has(selectedTeacher?.id)}
+                        <Badge class="text-xs bg-green-500/20 text-green-400 border-green-500/30">
+                            <ShoppingBag class="w-3 h-3 mr-1" />
+                            Pre-order
+                        </Badge>
+                    {/if}
                 </div>
 
                 <div>
