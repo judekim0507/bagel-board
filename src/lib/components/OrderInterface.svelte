@@ -30,6 +30,7 @@
     import ChefHat from "lucide-svelte/icons/chef-hat";
     import Check from "lucide-svelte/icons/check";
     import History from "lucide-svelte/icons/history";
+    import ArrowRightLeft from "lucide-svelte/icons/arrow-right-left";
 
     export let teacher: any;
     export let seatId: string = "";
@@ -217,6 +218,15 @@
                     Change
                 </Button>
             {:else}
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onclick={() => dispatch("move")}
+                    class="text-muted-foreground"
+                >
+                    <ArrowRightLeft class="w-4 h-4 mr-1" />
+                    Move
+                </Button>
                 <Button
                     variant="destructive"
                     size="sm"

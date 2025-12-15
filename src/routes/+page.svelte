@@ -35,6 +35,7 @@
     import Users from "lucide-svelte/icons/users";
     import Search from "lucide-svelte/icons/search";
     import ShoppingBag from "lucide-svelte/icons/shopping-bag";
+    import ArrowRightLeft from "lucide-svelte/icons/arrow-right-left";
 
     let selectedTableId: number | null = null;
     let selectedSeatId: string | null = null;
@@ -55,6 +56,10 @@
     let tableIds: number[] = [];
     let seatTeacherMap = new Map();
     let preorderTeacherIds = new Set<string>();
+    let showMoveModal = false;
+    let moveTargetTableId: number | null = null;
+    let movingTeacher: any = null;
+    let movingFromSeatId: string | null = null;
 
     async function fetchPreorders() {
         const res = await fetch("/api/preorders?fulfilled=false");
@@ -98,7 +103,7 @@
                     (t) => t.id === order.teacher_id,
                 );
 
-                if (seat && isTableAssigned(seat.table_id)) {
+                if (seat && seat.table_id !== null && isTableAssigned(seat.table_id)) {
                     audioManager.play('ready');
 
                     readyOrderPanels = [
@@ -315,6 +320,66 @@
     );
 
     $: occupiedCount = $seatAssignments.filter((a) => a.active).length;
+
+    // Move teacher functions
+    function openMoveModal(teacher: any, fromSeatId: string) {
+        movingTeacher = teacher;
+        movingFromSeatId = fromSeatId;
+        moveTargetTableId = null;
+        showMoveModal = true;
+        showOrderModal = false;
+    }
+
+    function getAvailableSeatsForTable(tableId: number) {
+        const tableSeats = $seats.filter((s) => s.table_id === tableId);
+        return tableSeats.filter((seat) => {
+            const isOccupied = $seatAssignments.some(
+                (a) => a.seat_id === seat.id && a.active
+            );
+            return !isOccupied;
+        });
+    }
+
+    async function moveTeacherToSeat(newSeatId: string) {
+        if (!movingTeacher || !movingFromSeatId) return;
+
+        // Deactivate old assignment
+        await supabase
+            .from("seat_assignments")
+            .update({ active: false })
+            .eq("seat_id", movingFromSeatId)
+            .eq("active", true);
+
+        // Create new assignment
+        const res = await fetch("/api/seats/assign", {
+            method: "POST",
+            body: JSON.stringify({
+                seat_id: newSeatId,
+                teacher_id: movingTeacher.id,
+                device_id: getDeviceId(),
+            }),
+        });
+
+        if (res.ok) {
+            // Update orders to new seat
+            await supabase
+                .from("orders")
+                .update({ seat_id: newSeatId })
+                .eq("seat_id", movingFromSeatId)
+                .eq("teacher_id", movingTeacher.id)
+                .neq("status", "served");
+
+            toast.success(`${movingTeacher.name} moved successfully!`);
+            await fetchSeatAssignments();
+        } else {
+            toast.error("Failed to move teacher");
+        }
+
+        showMoveModal = false;
+        movingTeacher = null;
+        movingFromSeatId = null;
+        moveTargetTableId = null;
+    }
 </script>
 
 {#if loading}
@@ -436,45 +501,39 @@
                                 {@const angle = (i * 360) / 8 - 90}
 
                                 <button
-                                    class="absolute w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center shadow-lg transition-transform active:scale-90 border-4 z-10"
-                                    class:bg-stone-700={!teacher}
-                                    class:bg-orange-500={teacher && !ready}
-                                    class:bg-green-500={teacher && ready}
-                                    class:text-stone-400={!teacher}
-                                    class:text-white={teacher}
-                                    class:border-stone-600={!teacher}
-                                    class:border-orange-600={teacher && !ready}
-                                    class:border-green-600={teacher && ready}
-                                    class:animate-pulse={teacher && ready}
+                                    class="absolute w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center transition-all duration-300 z-10 select-none
+                                           {teacher 
+                                                ? 'bg-card text-card-foreground shadow-md active:scale-95 border-2' 
+                                                : 'bg-muted/10 border-2 border-dashed border-border text-muted-foreground/40 hover:bg-muted/20 hover:border-muted-foreground/50 hover:text-muted-foreground'}"
+                                    class:border-border={teacher && !ready}
+                                    class:border-green-500={teacher && ready}
+                                    class:shadow-[0_0_20px_-5px_rgba(34,197,94,0.4)]={teacher && ready}
                                     style="transform: rotate({angle}deg) translate(var(--seat-radius, 210px)) rotate({-angle}deg);"
                                     onclick={() => handleSeatClick(seat.id)}
                                 >
                                     {#if ready}
                                         <div
-                                            class="absolute -top-1 -right-1 w-6 h-6 bg-green-400 rounded-full flex items-center justify-center shadow border-2 border-white"
+                                            class="absolute -top-1 -right-1 w-5 h-5 bg-green-500 text-white rounded-full flex items-center justify-center shadow-sm ring-2 ring-background z-20"
+                                            in:scale={{ duration: 200, start: 0.5 }}
                                         >
-                                            <Check class="w-3 h-3 text-white" />
+                                            <Check class="w-3 h-3" />
                                         </div>
                                     {/if}
+
                                     {#if teacher}
-                                        <div class="text-center leading-tight">
-                                            <span class="text-xs font-bold">
-                                                {teacher.name.split(" ")[0][0]}. {teacher.name
-                                                    .split(" ")
-                                                    .slice(1)
-                                                    .join(" ")}
+                                        <div class="text-center leading-none flex flex-col items-center justify-center gap-1 w-full px-1">
+                                            <span class="text-xs font-bold truncate max-w-full block">
+                                                {teacher.name.split(" ")[0][0]}. {teacher.name.split(" ").slice(1).join(" ")}
                                             </span>
+                                            
                                             {#if progress.total > 0}
-                                                <span class="text-[10px] font-medium block mt-0.5 bg-black/20 rounded-full px-1.5">
+                                                <span class="text-[10px] font-medium bg-muted/50 px-1.5 py-0.5 rounded-full border border-border/50">
                                                     {progress.ready}/{progress.total}
                                                 </span>
                                             {/if}
                                         </div>
                                     {:else}
-                                        <span
-                                            class="text-xl font-bold opacity-30"
-                                            >{seat.position}</span
-                                        >
+                                        <span class="text-lg font-medium">{seat.position}</span>
                                     {/if}
                                 </button>
                             {/each}
@@ -666,6 +725,7 @@
                 selectedTableId = null;
             }}
             on:checkout={handleCheckout}
+            on:move={() => openMoveModal(selectedTeacher, selectedSeatId)}
         />
     </div>
 {/if}
@@ -708,3 +768,111 @@
         }}
     />
 {/each}
+
+<!-- Move Teacher Modal -->
+<Dialog.Root
+    bind:open={showMoveModal}
+    onOpenChange={(open) => {
+        if (!open) {
+            moveTargetTableId = null;
+            movingTeacher = null;
+            movingFromSeatId = null;
+        }
+    }}
+>
+    <Dialog.Content class="sm:max-w-md dark bg-card border-border">
+        <Dialog.Header>
+            <Dialog.Title class="text-foreground">
+                {moveTargetTableId ? `Select Seat at Table ${moveTargetTableId}` : "Move to Table"}
+            </Dialog.Title>
+            <Dialog.Description class="text-muted-foreground">
+                {#if moveTargetTableId}
+                    Choose a seat for {movingTeacher?.name}
+                {:else}
+                    Select a table to move {movingTeacher?.name} to
+                {/if}
+            </Dialog.Description>
+        </Dialog.Header>
+
+        {#if !moveTargetTableId}
+            <!-- Table Selection -->
+            <div class="grid grid-cols-4 gap-2 py-4">
+                {#each Array.from({ length: 22 }, (_, i) => i + 1) as tableId}
+                    {@const availableSeats = getAvailableSeatsForTable(tableId)}
+                    {@const currentTableId = $seats.find(s => s.id === movingFromSeatId)?.table_id}
+                    {@const isCurrentTable = tableId === currentTableId}
+                    <button
+                        class="aspect-square rounded-lg border-2 flex flex-col items-center justify-center gap-0.5 transition-all
+                               {availableSeats.length > 0 && !isCurrentTable
+                                   ? 'bg-card hover:bg-accent hover:border-primary cursor-pointer'
+                                   : 'bg-muted/30 opacity-40 cursor-not-allowed'}
+                               {isCurrentTable ? 'border-primary/50' : 'border-border'}"
+                        disabled={availableSeats.length === 0 || isCurrentTable}
+                        onclick={() => {
+                            if (availableSeats.length > 0 && !isCurrentTable) {
+                                moveTargetTableId = tableId;
+                            }
+                        }}
+                    >
+                        <span class="text-lg font-bold text-foreground">{tableId}</span>
+                        <span class="text-[10px] text-muted-foreground">
+                            {#if isCurrentTable}
+                                Current
+                            {:else}
+                                {availableSeats.length} free
+                            {/if}
+                        </span>
+                    </button>
+                {/each}
+            </div>
+        {:else}
+            <!-- Seat Selection -->
+            <div class="py-4">
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    class="mb-4 text-muted-foreground"
+                    onclick={() => (moveTargetTableId = null)}
+                >
+                    <ArrowLeft class="w-4 h-4 mr-2" />
+                    Back to tables
+                </Button>
+
+                <div class="relative w-[200px] h-[200px] mx-auto bg-stone-800 rounded-full flex items-center justify-center">
+                    <span class="text-2xl font-bold text-stone-500">{moveTargetTableId}</span>
+
+                    {#each $seats
+                        .filter((s) => s.table_id === moveTargetTableId)
+                        .sort((a, b) => a.position - b.position) as seat, i}
+                        {@const isOccupied = $seatAssignments.some((a) => a.seat_id === seat.id && a.active)}
+                        {@const angle = (i * 360) / 8 - 90}
+
+                        <button
+                            class="absolute w-10 h-10 rounded-full flex items-center justify-center transition-all
+                                   {isOccupied
+                                       ? 'bg-muted/50 text-muted-foreground cursor-not-allowed'
+                                       : 'bg-primary text-primary-foreground hover:scale-110 cursor-pointer shadow-lg'}"
+                            style="transform: rotate({angle}deg) translate(100px) rotate({-angle}deg);"
+                            disabled={isOccupied}
+                            onclick={() => {
+                                if (!isOccupied) {
+                                    moveTeacherToSeat(seat.id);
+                                }
+                            }}
+                        >
+                            {#if isOccupied}
+                                <X class="w-4 h-4" />
+                            {:else}
+                                <span class="text-sm font-bold">{seat.position}</span>
+                            {/if}
+                        </button>
+                    {/each}
+                </div>
+
+                <p class="text-center text-xs text-muted-foreground mt-4">
+                    Tap an available seat to move {movingTeacher?.name}
+                </p>
+            </div>
+        {/if}
+    </Dialog.Content>
+</Dialog.Root>

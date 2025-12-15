@@ -11,8 +11,13 @@
     import { Button } from "$lib/components/ui/button/index.js";
     import * as Card from "$lib/components/ui/card/index.js";
     import * as Tabs from "$lib/components/ui/tabs/index.js";
+    import * as Dialog from "$lib/components/ui/dialog/index.js";
     import { Badge } from "$lib/components/ui/badge/index.js";
     import { ScrollArea } from "$lib/components/ui/scroll-area/index.js";
+    import { Input } from "$lib/components/ui/input/index.js";
+    import { Textarea } from "$lib/components/ui/textarea/index.js";
+    import { Switch } from "$lib/components/ui/switch/index.js";
+    import { Label } from "$lib/components/ui/label/index.js";
     import Settings from "lucide-svelte/icons/settings";
     import RotateCcw from "lucide-svelte/icons/rotate-ccw";
     import ExternalLink from "lucide-svelte/icons/external-link";
@@ -24,6 +29,14 @@
     import Database from "lucide-svelte/icons/database";
     import Wifi from "lucide-svelte/icons/wifi";
     import Circle from "lucide-svelte/icons/circle";
+    import Users from "lucide-svelte/icons/users";
+    import UtensilsCrossed from "lucide-svelte/icons/utensils-crossed";
+    import Plus from "lucide-svelte/icons/plus";
+    import Trash2 from "lucide-svelte/icons/trash-2";
+    import Pencil from "lucide-svelte/icons/pencil";
+    import Save from "lucide-svelte/icons/save";
+    import X from "lucide-svelte/icons/x";
+    import Coffee from "lucide-svelte/icons/coffee";
 
     let assignedTables: number[] = [];
     let dbConnected = false;
@@ -37,11 +50,258 @@
 
     let realtimeChannel: ReturnType<typeof supabase.channel> | null = null;
 
+    // Teachers management
+    let teachers: any[] = [];
+    let bulkTeacherInput = "";
+    let editingTeacher: any = null;
+    let editTeacherName = "";
+    let editTeacherDietary = "";
+
+    // Menu management
+    let menuItems: any[] = [];
+    let showAddItemModal = false;
+    let editingMenuItem: any = null;
+    let newItemName = "";
+    let newItemCategory = "meal";
+    let newItemCustomizable = false;
+    let newItemToppings = "";
+
     onMount(async () => {
         await loadStats();
+        await loadTeachers();
+        await loadMenuItems();
         assignedTables = getAssignedTables();
         checkRealtimeStatus();
     });
+
+    async function loadTeachers() {
+        const { data } = await supabase
+            .from("teachers")
+            .select("*")
+            .order("name");
+        if (data) teachers = data;
+    }
+
+    async function loadMenuItems() {
+        const { data } = await supabase
+            .from("menu_items")
+            .select("*")
+            .order("category")
+            .order("name");
+        if (data) menuItems = data;
+    }
+
+    async function addBulkTeachers() {
+        const names = bulkTeacherInput
+            .split("\n")
+            .map((n) => n.trim())
+            .filter((n) => n.length > 0);
+
+        if (names.length === 0) {
+            toast.error("Enter at least one teacher name");
+            return;
+        }
+
+        const existingNames = new Set(
+            teachers.map((t) => t.name.toLowerCase()),
+        );
+        const newNames = names.filter(
+            (n) => !existingNames.has(n.toLowerCase()),
+        );
+        const duplicates = names.length - newNames.length;
+
+        if (newNames.length === 0) {
+            toast.error("All names already exist");
+            return;
+        }
+
+        const { error } = await supabase
+            .from("teachers")
+            .insert(newNames.map((name) => ({ name })));
+
+        if (error) {
+            toast.error("Failed to add teachers");
+        } else {
+            toast.success(
+                `Added ${newNames.length} teacher(s)${duplicates > 0 ? `, ${duplicates} skipped (duplicates)` : ""}`,
+            );
+            bulkTeacherInput = "";
+            await loadTeachers();
+            await loadStats();
+        }
+    }
+
+    async function deleteTeacher(id: string) {
+        const teacher = teachers.find((t) => t.id === id);
+        if (!confirm(`Delete ${teacher?.name}?`)) return;
+
+        const { error } = await supabase.from("teachers").delete().eq("id", id);
+        if (error) {
+            // Foreign key constraint - teacher has past orders
+            if (error.code === "23503") {
+                toast.error(
+                    `Can't delete "${teacher?.name}" - they have past orders or assignments in the system.`
+                );
+            } else {
+                toast.error("Failed to delete teacher");
+                console.error(error);
+            }
+        } else {
+            toast.success("Teacher deleted");
+            await loadTeachers();
+            await loadStats();
+        }
+    }
+
+    function startEditTeacher(teacher: any) {
+        editingTeacher = teacher;
+        editTeacherName = teacher.name;
+        editTeacherDietary = teacher.dietary_notes || "";
+    }
+
+    async function saveTeacherEdit() {
+        if (!editingTeacher || !editTeacherName.trim()) return;
+
+        const { error } = await supabase
+            .from("teachers")
+            .update({
+                name: editTeacherName.trim(),
+                dietary_notes: editTeacherDietary.trim() || null,
+            })
+            .eq("id", editingTeacher.id);
+
+        if (error) {
+            toast.error("Failed to update teacher");
+        } else {
+            toast.success("Teacher updated");
+            editingTeacher = null;
+            await loadTeachers();
+        }
+    }
+
+    function cancelTeacherEdit() {
+        editingTeacher = null;
+        editTeacherName = "";
+        editTeacherDietary = "";
+    }
+
+    // Menu functions
+    function openAddItemModal() {
+        newItemName = "";
+        newItemCategory = "meal";
+        newItemCustomizable = false;
+        newItemToppings = "";
+        editingMenuItem = null;
+        showAddItemModal = true;
+    }
+
+    function openEditItemModal(item: any) {
+        editingMenuItem = item;
+        newItemName = item.name;
+        newItemCategory = item.category;
+        newItemCustomizable = item.toppings_config?.customizable || false;
+        newItemToppings = item.toppings_config?.options?.join(", ") || "";
+        showAddItemModal = true;
+    }
+
+    async function saveMenuItem() {
+        if (!newItemName.trim()) {
+            toast.error("Enter item name");
+            return;
+        }
+
+        const toppingsArray = newItemToppings
+            .split(",")
+            .map((t) => t.trim())
+            .filter((t) => t.length > 0);
+
+        const toppingsConfig =
+            newItemCustomizable && toppingsArray.length > 0
+                ? { customizable: true, options: toppingsArray }
+                : null;
+
+        if (editingMenuItem) {
+            const { error } = await supabase
+                .from("menu_items")
+                .update({
+                    name: newItemName.trim(),
+                    category: newItemCategory,
+                    toppings_config: toppingsConfig,
+                })
+                .eq("id", editingMenuItem.id);
+
+            if (error) {
+                toast.error("Failed to update item");
+            } else {
+                toast.success("Menu item updated");
+                showAddItemModal = false;
+                await loadMenuItems();
+            }
+        } else {
+            const { error } = await supabase.from("menu_items").insert({
+                name: newItemName.trim(),
+                category: newItemCategory,
+                toppings_config: toppingsConfig,
+                available: true,
+            });
+
+            if (error) {
+                toast.error("Failed to add item");
+            } else {
+                toast.success("Menu item added");
+                showAddItemModal = false;
+                await loadMenuItems();
+                await loadStats();
+            }
+        }
+    }
+
+    async function toggleItemAvailability(item: any) {
+        const { error } = await supabase
+            .from("menu_items")
+            .update({ available: !item.available })
+            .eq("id", item.id);
+
+        if (!error) {
+            item.available = !item.available;
+            menuItems = menuItems;
+            toast.success(item.available ? "Item enabled" : "Item disabled");
+        }
+    }
+
+    async function deleteMenuItem(id: string) {
+        const item = menuItems.find((i) => i.id === id);
+        if (!confirm(`Delete "${item?.name}"?`)) return;
+
+        const { error } = await supabase
+            .from("menu_items")
+            .delete()
+            .eq("id", id);
+
+        if (error) {
+            // Foreign key constraint - item is used in past orders
+            if (error.code === "23503") {
+                const disable = confirm(
+                    `"${item?.name}" can't be deleted because it's used in past orders.\n\nWould you like to disable it instead? (It won't show up in the menu)`
+                );
+                if (disable && item) {
+                    await supabase
+                        .from("menu_items")
+                        .update({ available: false })
+                        .eq("id", id);
+                    toast.success("Item disabled");
+                    await loadMenuItems();
+                }
+            } else {
+                toast.error("Failed to delete item");
+                console.error(error);
+            }
+        } else {
+            toast.success("Item deleted");
+            await loadMenuItems();
+            await loadStats();
+        }
+    }
 
     onDestroy(() => {
         if (realtimeChannel) {
@@ -97,35 +357,33 @@
 
     async function resetSession() {
         const confirmed = confirm(
-            "This will:\n• Check out all teachers\n• Mark all orders as served\n• Clear all pre-orders\n• Reset the session for a new meal\n\nAre you sure?",
+            "This will:\n• Check out all teachers\n• DELETE all order history\n• DELETE all pre-orders\n• Reset everything for a new session\n\nAre you sure?",
         );
 
         if (!confirmed) return;
 
-        // Check out all teachers
-        await supabase
-            .from("seat_assignments")
-            .update({ active: false })
-            .eq("active", true);
+        // Delete order_items first (child table)
+        await supabase.from("order_items").delete().not("id", "is", null);
 
-        // Mark all orders as served
-        await supabase
-            .from("orders")
-            .update({ status: "served" })
-            .neq("status", "served");
+        // Delete all orders
+        await supabase.from("orders").delete().not("id", "is", null);
 
-        // Mark all preorders as fulfilled
-        await supabase
-            .from("pre_orders")
-            .update({ fulfilled: true })
-            .eq("fulfilled", false);
+        // Delete pre_order_items first (child table)
+        await supabase.from("pre_order_items").delete().not("id", "is", null);
+
+        // Delete all pre_orders
+        await supabase.from("pre_orders").delete().not("id", "is", null);
+
+        // Delete all seat assignments
+        await supabase.from("seat_assignments").delete().not("id", "is", null);
 
         // Store session start time in system_config
-        await supabase
-            .from("system_config")
-            .upsert({ key: "session_start_time", value: new Date().toISOString() });
+        await supabase.from("system_config").upsert({
+            key: "session_start_time",
+            value: new Date().toISOString(),
+        });
 
-        toast.success("Session reset successfully!");
+        toast.success("Session reset - all history cleared!");
         await loadStats();
     }
 
@@ -207,6 +465,20 @@
                         class="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-3"
                     >
                         My Tables
+                    </Tabs.Trigger>
+                    <Tabs.Trigger
+                        value="teachers"
+                        class="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-3"
+                    >
+                        <Users class="w-4 h-4 mr-2" />
+                        Teachers
+                    </Tabs.Trigger>
+                    <Tabs.Trigger
+                        value="menu"
+                        class="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-3"
+                    >
+                        <UtensilsCrossed class="w-4 h-4 mr-2" />
+                        Menu
                     </Tabs.Trigger>
                 </Tabs.List>
 
@@ -420,8 +692,8 @@
                                     <p class="text-sm text-muted-foreground">
                                         <strong class="text-destructive"
                                             >Warning:</strong
-                                        > This action cannot be undone. Use this
-                                        at the end of each meal service.
+                                        > This action cannot be undone. Use this at
+                                        the end of each meal service.
                                     </p>
                                 </div>
                                 <Button
@@ -601,6 +873,352 @@
                         </Card.Root>
                     </div>
                 </Tabs.Content>
+
+                <Tabs.Content value="teachers" class="mt-0">
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <!-- Bulk Add Teachers -->
+                        <Card.Root>
+                            <Card.Header>
+                                <Card.Title class="flex items-center gap-2">
+                                    <Plus class="w-5 h-5" />
+                                    Add Teachers
+                                </Card.Title>
+                                <Card.Description>
+                                    One name per line. Duplicates are
+                                    automatically skipped.
+                                </Card.Description>
+                            </Card.Header>
+                            <Card.Content>
+                                <Textarea
+                                    bind:value={bulkTeacherInput}
+                                    placeholder="John Smith
+Jane Doe
+Michael Johnson"
+                                    rows={8}
+                                    class="font-mono text-sm mb-4"
+                                />
+                                <Button
+                                    onclick={addBulkTeachers}
+                                    class="w-full"
+                                >
+                                    <Plus class="w-4 h-4 mr-2" />
+                                    Add Teachers
+                                </Button>
+                            </Card.Content>
+                        </Card.Root>
+
+                        <!-- Existing Teachers -->
+                        <Card.Root>
+                            <Card.Header>
+                                <Card.Title
+                                    class="flex items-center justify-between"
+                                >
+                                    <span class="flex items-center gap-2">
+                                        <Users class="w-5 h-5" />
+                                        Current Teachers
+                                    </span>
+                                    <Badge variant="secondary"
+                                        >{teachers.length}</Badge
+                                    >
+                                </Card.Title>
+                            </Card.Header>
+                            <Card.Content class="p-0">
+                                <div class="max-h-[400px] overflow-y-auto">
+                                    {#each teachers as teacher (teacher.id)}
+                                        {#if editingTeacher?.id === teacher.id}
+                                            <div
+                                                class="p-3 border-b bg-muted/50"
+                                            >
+                                                <Input
+                                                    bind:value={editTeacherName}
+                                                    placeholder="Name"
+                                                    class="mb-2"
+                                                />
+                                                <Input
+                                                    bind:value={
+                                                        editTeacherDietary
+                                                    }
+                                                    placeholder="Dietary notes (optional)"
+                                                    class="mb-2 text-sm"
+                                                />
+                                                <div class="flex gap-2">
+                                                    <Button
+                                                        size="sm"
+                                                        onclick={saveTeacherEdit}
+                                                    >
+                                                        <Save
+                                                            class="w-3 h-3 mr-1"
+                                                        />
+                                                        Save
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onclick={cancelTeacherEdit}
+                                                    >
+                                                        Cancel
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        {:else}
+                                            <div
+                                                class="flex items-center justify-between p-3 border-b hover:bg-muted/30 group"
+                                            >
+                                                <div class="min-w-0 flex-1">
+                                                    <p
+                                                        class="font-medium text-foreground truncate"
+                                                    >
+                                                        {teacher.name}
+                                                    </p>
+                                                    {#if teacher.dietary_notes}
+                                                        <p
+                                                            class="text-xs text-orange-400 truncate"
+                                                        >
+                                                            {teacher.dietary_notes}
+                                                        </p>
+                                                    {/if}
+                                                </div>
+                                                <div
+                                                    class="flex gap-1 transition-opacity"
+                                                >
+                                                    <Button
+                                                        size="icon"
+                                                        variant="ghost"
+                                                        class="h-8 w-8"
+                                                        onclick={() =>
+                                                            startEditTeacher(
+                                                                teacher,
+                                                            )}
+                                                    >
+                                                        <Pencil
+                                                            class="w-3.5 h-3.5"
+                                                        />
+                                                    </Button>
+                                                    <Button
+                                                        size="icon"
+                                                        variant="ghost"
+                                                        class="h-8 w-8 text-destructive hover:text-destructive"
+                                                        onclick={() =>
+                                                            deleteTeacher(
+                                                                teacher.id,
+                                                            )}
+                                                    >
+                                                        <Trash2
+                                                            class="w-3.5 h-3.5"
+                                                        />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        {/if}
+                                    {/each}
+                                    {#if teachers.length === 0}
+                                        <div
+                                            class="p-8 text-center text-muted-foreground"
+                                        >
+                                            <Users
+                                                class="w-10 h-10 mx-auto mb-2 opacity-30"
+                                            />
+                                            <p class="text-sm">
+                                                No teachers yet
+                                            </p>
+                                        </div>
+                                    {/if}
+                                </div>
+                            </Card.Content>
+                        </Card.Root>
+                    </div>
+                </Tabs.Content>
+
+                <Tabs.Content value="menu" class="mt-0">
+                    <div class="space-y-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3
+                                    class="text-lg font-semibold text-foreground"
+                                >
+                                    Menu Items
+                                </h3>
+                                <p class="text-sm text-muted-foreground">
+                                    {menuItems.length} items • {menuItems.filter(
+                                        (i) => i.available,
+                                    ).length} available
+                                </p>
+                            </div>
+                            <Button onclick={openAddItemModal}>
+                                <Plus class="w-4 h-4 mr-2" />
+                                Add Item
+                            </Button>
+                        </div>
+
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <!-- Meals -->
+                            <Card.Root>
+                                <Card.Header class="pb-3">
+                                    <Card.Title
+                                        class="flex items-center gap-2 text-base"
+                                    >
+                                        <UtensilsCrossed class="w-4 h-4" />
+                                        Meals
+                                    </Card.Title>
+                                </Card.Header>
+                                <Card.Content class="p-0">
+                                    <div class="divide-y">
+                                        {#each menuItems.filter((i) => i.category === "meal") as item (item.id)}
+                                            <div
+                                                class="flex items-center justify-between p-3 hover:bg-muted/30 group {!item.available
+                                                    ? 'opacity-50'
+                                                    : ''}"
+                                            >
+                                                <div class="min-w-0 flex-1">
+                                                    <p
+                                                        class="font-medium text-foreground"
+                                                    >
+                                                        {item.name}
+                                                    </p>
+                                                    {#if item.toppings_config?.customizable}
+                                                        <p
+                                                            class="text-xs text-muted-foreground"
+                                                        >
+                                                            Options: {item.toppings_config.options?.join(
+                                                                ", ",
+                                                            )}
+                                                        </p>
+                                                    {/if}
+                                                </div>
+                                                <div
+                                                    class="flex items-center gap-2"
+                                                >
+                                                    <Switch
+                                                        checked={item.available}
+                                                        onCheckedChange={() =>
+                                                            toggleItemAvailability(
+                                                                item,
+                                                            )}
+                                                    />
+                                                    <Button
+                                                        size="icon"
+                                                        variant="ghost"
+                                                        class="h-8 w-8 group"
+                                                        onclick={() =>
+                                                            openEditItemModal(
+                                                                item,
+                                                            )}
+                                                    >
+                                                        <Pencil
+                                                            class="w-3.5 h-3.5"
+                                                        />
+                                                    </Button>
+                                                    <Button
+                                                        size="icon"
+                                                        variant="ghost"
+                                                        class="h-8 w-8 text-destructive"
+                                                        onclick={() =>
+                                                            deleteMenuItem(
+                                                                item.id,
+                                                            )}
+                                                    >
+                                                        <Trash2
+                                                            class="w-3.5 h-3.5"
+                                                        />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        {:else}
+                                            <div
+                                                class="p-6 text-center text-muted-foreground text-sm"
+                                            >
+                                                No meals added yet
+                                            </div>
+                                        {/each}
+                                    </div>
+                                </Card.Content>
+                            </Card.Root>
+
+                            <!-- Drinks -->
+                            <Card.Root>
+                                <Card.Header class="pb-3">
+                                    <Card.Title
+                                        class="flex items-center gap-2 text-base"
+                                    >
+                                        <Coffee class="w-4 h-4" />
+                                        Drinks
+                                    </Card.Title>
+                                </Card.Header>
+                                <Card.Content class="p-0">
+                                    <div class="divide-y">
+                                        {#each menuItems.filter((i) => i.category === "drink") as item (item.id)}
+                                            <div
+                                                class="flex items-center justify-between p-3 hover:bg-muted/30 group {!item.available
+                                                    ? 'opacity-50'
+                                                    : ''}"
+                                            >
+                                                <div class="min-w-0 flex-1">
+                                                    <p
+                                                        class="font-medium text-foreground"
+                                                    >
+                                                        {item.name}
+                                                    </p>
+                                                    {#if item.toppings_config?.customizable}
+                                                        <p
+                                                            class="text-xs text-muted-foreground"
+                                                        >
+                                                            Options: {item.toppings_config.options?.join(
+                                                                ", ",
+                                                            )}
+                                                        </p>
+                                                    {/if}
+                                                </div>
+                                                <div
+                                                    class="flex items-center gap-2"
+                                                >
+                                                    <Switch
+                                                        checked={item.available}
+                                                        onCheckedChange={() =>
+                                                            toggleItemAvailability(
+                                                                item,
+                                                            )}
+                                                    />
+                                                    <Button
+                                                        size="icon"
+                                                        variant="ghost"
+                                                        class="h-8 w-8 "
+                                                        onclick={() =>
+                                                            openEditItemModal(
+                                                                item,
+                                                            )}
+                                                    >
+                                                        <Pencil
+                                                            class="w-3.5 h-3.5"
+                                                        />
+                                                    </Button>
+                                                    <Button
+                                                        size="icon"
+                                                        variant="ghost"
+                                                        class="h-8 w-8 text-destructive "
+                                                        onclick={() =>
+                                                            deleteMenuItem(
+                                                                item.id,
+                                                            )}
+                                                    >
+                                                        <Trash2
+                                                            class="w-3.5 h-3.5"
+                                                        />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        {:else}
+                                            <div
+                                                class="p-6 text-center text-muted-foreground text-sm"
+                                            >
+                                                No drinks added yet
+                                            </div>
+                                        {/each}
+                                    </div>
+                                </Card.Content>
+                            </Card.Root>
+                        </div>
+                    </div>
+                </Tabs.Content>
             </Tabs.Root>
 
             <p class="text-center text-xs text-muted-foreground/50 pt-8 pb-4">
@@ -619,3 +1237,100 @@
         </div>
     </ScrollArea>
 </div>
+
+<!-- Add/Edit Menu Item Modal -->
+<Dialog.Root bind:open={showAddItemModal}>
+    <Dialog.Content class="sm:max-w-md dark bg-card border-border">
+        <Dialog.Header>
+            <Dialog.Title class="text-foreground">
+                {editingMenuItem ? "Edit Menu Item" : "Add Menu Item"}
+            </Dialog.Title>
+            <Dialog.Description class="text-muted-foreground">
+                {editingMenuItem
+                    ? "Update the menu item details"
+                    : "Add a new item to the menu"}
+            </Dialog.Description>
+        </Dialog.Header>
+
+        <div class="space-y-4 py-4">
+            <div>
+                <Label class="text-foreground mb-2 block">Name</Label>
+                <Input
+                    bind:value={newItemName}
+                    placeholder="e.g., Bagel with Cream Cheese"
+                    class="text-foreground"
+                />
+            </div>
+
+            <div>
+                <Label class="text-foreground mb-2 block">Category</Label>
+                <div class="flex gap-2">
+                    <Button
+                        variant={newItemCategory === "meal"
+                            ? "default"
+                            : "outline"}
+                        onclick={() => (newItemCategory = "meal")}
+                        class="flex-1"
+                    >
+                        <UtensilsCrossed class="w-4 h-4 mr-2" />
+                        Meal
+                    </Button>
+                    <Button
+                        variant={newItemCategory === "drink"
+                            ? "default"
+                            : "outline"}
+                        onclick={() => (newItemCategory = "drink")}
+                        class="flex-1"
+                    >
+                        <Coffee class="w-4 h-4 mr-2" />
+                        Drink
+                    </Button>
+                </div>
+            </div>
+
+            <div
+                class="flex items-center justify-between p-3 rounded-lg border bg-muted/30"
+            >
+                <div>
+                    <p class="font-medium text-foreground text-sm">
+                        Customizable Options
+                    </p>
+                    <p class="text-xs text-muted-foreground">
+                        Allow toppings/customizations
+                    </p>
+                </div>
+                <Switch bind:checked={newItemCustomizable} />
+            </div>
+
+            {#if newItemCustomizable}
+                <div>
+                    <Label class="text-foreground mb-2 block"
+                        >Options (comma separated)</Label
+                    >
+                    <Input
+                        bind:value={newItemToppings}
+                        placeholder="e.g., Butter, Cream Cheese, Jam"
+                        class="text-foreground"
+                    />
+                    <p class="text-xs text-muted-foreground mt-1">
+                        These options will be selectable when ordering
+                    </p>
+                </div>
+            {/if}
+        </div>
+
+        <Dialog.Footer class="gap-2">
+            <Button
+                variant="outline"
+                onclick={() => (showAddItemModal = false)}
+                class="text-foreground"
+            >
+                Cancel
+            </Button>
+            <Button onclick={saveMenuItem}>
+                <Save class="w-4 h-4 mr-2" />
+                {editingMenuItem ? "Update" : "Add Item"}
+            </Button>
+        </Dialog.Footer>
+    </Dialog.Content>
+</Dialog.Root>
