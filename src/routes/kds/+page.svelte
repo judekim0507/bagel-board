@@ -4,6 +4,7 @@
     import { slide, scale } from "svelte/transition";
     import { onMount } from "svelte";
     import { toast } from "svelte-sonner";
+    import { audioManager } from "$lib/utils/audio";
 
     // shadcn-svelte components
     import { Button } from "$lib/components/ui/button/index.js";
@@ -39,8 +40,7 @@
             (o) => o.status === "pending",
         ).length;
         if (previousOrderCount > 0 && currentCount > previousOrderCount) {
-            const audio = new Audio("/sounds/new-order.wav");
-            audio.play().catch(() => {});
+            audioManager.play('newOrder');
             toast.info("New order received!", { duration: 3000 });
         }
         previousOrderCount = currentCount;
@@ -95,8 +95,7 @@
             body: JSON.stringify({ order_id: orderId, status: "ready" }),
         });
 
-        const readyAudio = new Audio("/sounds/ready.wav");
-        readyAudio.play().catch(() => {});
+        audioManager.play('ready');
 
         if (res.ok) {
             toast.success("Order marked ready!");

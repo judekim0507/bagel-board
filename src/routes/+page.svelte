@@ -18,6 +18,7 @@
         isTableAssigned,
         getAssignedTables,
     } from "$lib/utils/tableAssignment";
+    import { audioManager } from "$lib/utils/audio";
 
     import { Button } from "$lib/components/ui/button/index.js";
     import * as Card from "$lib/components/ui/card/index.js";
@@ -88,8 +89,7 @@
                 );
 
                 if (seat && isTableAssigned(seat.table_id)) {
-                    const audio = new Audio("/sounds/ready.wav");
-                    audio.play().catch(() => {});
+                    audioManager.play('ready');
 
                     readyOrderPanels = [
                         ...readyOrderPanels,
@@ -150,6 +150,13 @@
         return $orders.some(
             (o) => o.seat_id === seatId && o.status === "ready",
         );
+    }
+
+    function getOrderProgress(seatId: string) {
+        const seatOrders = $orders.filter((o) => o.seat_id === seatId);
+        const total = seatOrders.length;
+        const ready = seatOrders.filter((o) => o.status === "ready" || o.status === "served").length;
+        return { ready, total };
     }
 
     function handleTableClick(id: number) {
@@ -415,6 +422,7 @@
                                 .sort((a, b) => a.position - b.position) as seat, i (seat.id)}
                                 {@const teacher = getSeatStatus(seat.id)}
                                 {@const ready = hasReadyOrder(seat.id)}
+                                {@const progress = getOrderProgress(seat.id)}
                                 {@const angle = (i * 360) / 8 - 90}
 
                                 <button
@@ -446,6 +454,11 @@
                                                     .slice(1)
                                                     .join(" ")}
                                             </span>
+                                            {#if progress.total > 0}
+                                                <span class="text-[10px] font-medium block mt-0.5 bg-black/20 rounded-full px-1.5">
+                                                    {progress.ready}/{progress.total}
+                                                </span>
+                                            {/if}
                                         </div>
                                     {:else}
                                         <span

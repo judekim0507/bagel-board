@@ -55,6 +55,9 @@ async function setupRealtime() {
 }
 
 export async function fetchOrders() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     const { data, error } = await supabase
         .from('orders')
         .select(`
@@ -64,7 +67,7 @@ export async function fetchOrders() {
                 menu_items (*)
             )
         `)
-        .neq('status', 'served')
+        .gte('created_at', today.toISOString())
         .order('created_at', { ascending: true });
 
     if (!error && data) {
