@@ -22,7 +22,8 @@
 
     let now = Date.now();
     let interval: any;
-    let previousOrderCount = 0;
+    let knownOrderIds = new Set<string>();
+    let initialized = false;
 
     onMount(() => {
         fetchTeachers();
@@ -36,14 +37,25 @@
 
     // Watch for new orders and play sound
     $: {
-        const currentCount = activeOrders.filter(
-            (o) => o.status === "pending",
-        ).length;
-        if (previousOrderCount > 0 && currentCount > previousOrderCount) {
-            audioManager.play('newOrder');
-            toast.info("New order received!", { duration: 3000 });
+        // Only consider orders that have items loaded
+        const pendingOrders = $orders.filter(
+            (o) => o.status === "pending" && o.order_items && o.order_items.length > 0
+        );
+
+        if (!initialized && $orders.length > 0) {
+            // First load - just record existing orders, don't play sound
+            pendingOrders.forEach((o) => knownOrderIds.add(o.id));
+            initialized = true;
+        } else if (initialized) {
+            // Check for new orders we haven't seen (that have items)
+            for (const order of pendingOrders) {
+                if (!knownOrderIds.has(order.id)) {
+                    knownOrderIds.add(order.id);
+                    audioManager.play('newOrder');
+                    toast.info("New order received!", { duration: 3000 });
+                }
+            }
         }
-        previousOrderCount = currentCount;
     }
 
     $: enrichedOrders = $orders.map((order) => {
@@ -56,7 +68,7 @@
     });
 
     $: activeOrders = enrichedOrders
-        .filter((o) => o.status !== "served")
+        .filter((o) => o.status !== "served" && o.order_items && o.order_items.length > 0)
         .sort((a, b) => {
             if (a.status === "ready" && b.status !== "ready") return 1;
             if (a.status !== "ready" && b.status === "ready") return -1;

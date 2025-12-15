@@ -39,7 +39,8 @@
                hover:bg-accent transition-all group"
         style="top: calc(40% + {stackIndex * 70}px);"
         onclick={() => dispatch("restore")}
-        transition:fly={{ x: 100, duration: 200 }}
+        in:fly={{ x: 100, duration: 200 }}
+        out:fly={{ x: 100, duration: 150 }}
         aria-label="Restore order panel for Table {seat?.table_id}"
     >
         <div class="flex items-center gap-3 px-3 py-4">
@@ -64,14 +65,16 @@
     <button
         class="fixed inset-0 bg-black/50 z-[55]"
         onclick={minimize}
-        transition:fade={{ duration: 150 }}
+        in:fade={{ duration: 150 }}
+        out:fade={{ duration: 150 }}
         aria-label="Minimize panel"
     ></button>
 
     <!-- Side Panel -->
     <div
         class="fixed top-0 right-0 bottom-0 w-full max-w-full md:w-[min(400px,100vw)] bg-card z-[60] flex flex-col shadow-2xl border-l border-border overflow-hidden"
-        transition:fly={{ x: 400, duration: 250 }}
+        in:fly={{ x: 400, duration: 250 }}
+        out:fly={{ x: 400, duration: 200 }}
     >
         <!-- Header -->
         <header class="p-5 border-b flex-none">
