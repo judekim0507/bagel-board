@@ -36,6 +36,7 @@
     import Search from "lucide-svelte/icons/search";
     import ShoppingBag from "lucide-svelte/icons/shopping-bag";
     import ArrowRightLeft from "lucide-svelte/icons/arrow-right-left";
+    import UserPlus from "lucide-svelte/icons/user-plus";
 
     let selectedTableId: number | null = null;
     let selectedSeatId: string | null = null;
@@ -199,6 +200,29 @@
         } else {
             showTeacherModal = true;
         }
+    }
+
+    async function quickAddTeacher(name: string) {
+        if (!name.trim()) return;
+
+        const { data, error } = await supabase
+            .from("teachers")
+            .insert({ name: name.trim() })
+            .select()
+            .single();
+
+        if (error) {
+            if (error.code === "23505") {
+                toast.error("Teacher already exists");
+            } else {
+                toast.error("Failed to add teacher");
+            }
+            return null;
+        }
+
+        await fetchTeachers();
+        toast.success(`Added ${data.name}`);
+        return data;
     }
 
     async function handleCheckout() {
@@ -628,7 +652,29 @@
                             </button>
                         {/each}
 
-                        {#if filteredTeachers.length === 0}
+                        {#if filteredTeachers.length === 0 && searchQuery.trim()}
+                            <div class="py-6 text-center">
+                                <p class="text-muted-foreground text-sm mb-3">
+                                    No teachers found for "{searchQuery}"
+                                </p>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onclick={async () => {
+                                        const newTeacher = await quickAddTeacher(searchQuery);
+                                        if (newTeacher) {
+                                            selectedTeacher = newTeacher;
+                                            dietaryNotes = "";
+                                            editingDietary = true;
+                                            searchQuery = "";
+                                        }
+                                    }}
+                                >
+                                    <UserPlus class="w-4 h-4 mr-2" />
+                                    Add "{searchQuery.trim()}"
+                                </Button>
+                            </div>
+                        {:else if filteredTeachers.length === 0}
                             <div class="py-8 text-center text-muted-foreground text-sm">
                                 No teachers found
                             </div>
