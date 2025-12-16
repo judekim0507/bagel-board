@@ -42,6 +42,7 @@
     import Wrench from "lucide-svelte/icons/wrench";
     import ShieldCheck from "lucide-svelte/icons/shield-check";
     import Search from "lucide-svelte/icons/search";
+    import Download from "lucide-svelte/icons/download";
 
     let assignedTables: number[] = [];
 
@@ -513,6 +514,83 @@
         }
     }
 
+    let exporting = false;
+
+    async function exportSession() {
+        exporting = true;
+
+        try {
+            const { data: configData } = await supabase
+                .from("system_config")
+                .select("value")
+                .eq("key", "session_start_time")
+                .single();
+
+            let startTime: string;
+            if (configData?.value) {
+                startTime = configData.value;
+            } else {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                startTime = today.toISOString();
+            }
+
+            const [ordersRes, preordersRes, assignmentsRes, teachersRes, menuRes] = await Promise.all([
+                supabase
+                    .from("orders")
+                    .select("*, order_items(*, menu_items(name, category))")
+                    .gte("created_at", startTime),
+                supabase
+                    .from("pre_orders")
+                    .select("*, pre_order_items(*, menu_items(name, category))")
+                    .gte("created_at", startTime),
+                supabase
+                    .from("seat_assignments")
+                    .select("*, teachers(name), seats(table_id, position)")
+                    .gte("created_at", startTime),
+                supabase.from("teachers").select("*"),
+                supabase.from("menu_items").select("*"),
+            ]);
+
+            const exportData = {
+                exportedAt: new Date().toISOString(),
+                sessionStart: startTime,
+                summary: {
+                    totalOrders: ordersRes.data?.length || 0,
+                    totalPreorders: preordersRes.data?.length || 0,
+                    totalAssignments: assignmentsRes.data?.length || 0,
+                    ordersByStatus: {
+                        pending: ordersRes.data?.filter(o => o.status === "pending").length || 0,
+                        preparing: ordersRes.data?.filter(o => o.status === "preparing").length || 0,
+                        ready: ordersRes.data?.filter(o => o.status === "ready").length || 0,
+                        served: ordersRes.data?.filter(o => o.status === "served").length || 0,
+                    },
+                },
+                orders: ordersRes.data || [],
+                preorders: preordersRes.data || [],
+                seatAssignments: assignmentsRes.data || [],
+                teachers: teachersRes.data || [],
+                menuItems: menuRes.data || [],
+            };
+
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `bagel-board-export-${new Date().toISOString().split("T")[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            toast.success("Session exported!");
+        } catch (err) {
+            toast.error("Failed to export session");
+        }
+
+        exporting = false;
+    }
+
     function toggleTable(tableId: number) {
         if (assignedTables.includes(tableId)) {
             assignedTables = assignedTables.filter((t) => t !== tableId);
@@ -890,6 +968,32 @@
                                         </p>
                                     </div>
                                 </div>
+                            </Card.Content>
+                        </Card.Root>
+
+                        <Card.Root>
+                            <Card.Header>
+                                <Card.Title class="flex items-center gap-2">
+                                    <Download class="w-5 h-5" />
+                                    Export Session Data
+                                </Card.Title>
+                                <Card.Description>
+                                    Download all session data including orders, assignments, and configuration.
+                                </Card.Description>
+                            </Card.Header>
+                            <Card.Content>
+                                <p class="text-sm text-muted-foreground mb-4">
+                                    Exports as JSON file with orders, pre-orders, seat assignments, teacher list, and menu items.
+                                </p>
+                                <Button onclick={exportSession} disabled={exporting}>
+                                    {#if exporting}
+                                        <RefreshCw class="w-4 h-4 mr-2 animate-spin" />
+                                        Exporting...
+                                    {:else}
+                                        <Download class="w-4 h-4 mr-2" />
+                                        Export Session
+                                    {/if}
+                                </Button>
                             </Card.Content>
                         </Card.Root>
                     </div>

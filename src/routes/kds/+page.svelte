@@ -1,29 +1,31 @@
 <script lang="ts">
     import { orders, seats } from "$lib/stores/realtime";
     import { teachers, fetchTeachers } from "$lib/stores/teachers";
+    import { supabase } from "$lib/supabase";
     import { slide, scale } from "svelte/transition";
-    import { onMount } from "svelte";
+    import { onMount, onDestroy } from "svelte";
     import { toast } from "svelte-sonner";
     import { audioManager } from "$lib/utils/audio";
 
-    // shadcn-svelte components
     import { Button } from "$lib/components/ui/button/index.js";
     import * as Card from "$lib/components/ui/card/index.js";
     import { Badge } from "$lib/components/ui/badge/index.js";
     import { ScrollArea } from "$lib/components/ui/scroll-area/index.js";
 
-    // Icons
     import Check from "lucide-svelte/icons/check";
     import Clock from "lucide-svelte/icons/clock";
     import AlertTriangle from "lucide-svelte/icons/alert-triangle";
     import ChefHat from "lucide-svelte/icons/chef-hat";
     import PartyPopper from "lucide-svelte/icons/party-popper";
     import Undo2 from "lucide-svelte/icons/undo-2";
+    import Circle from "lucide-svelte/icons/circle";
 
     let now = Date.now();
-    let interval: any;
+    let interval: ReturnType<typeof setInterval>;
     let knownOrderIds = new Set<string>();
     let initialized = false;
+    let connected = true;
+    let connectionChannel: ReturnType<typeof supabase.channel> | null = null;
 
     onMount(() => {
         fetchTeachers();
@@ -32,12 +34,20 @@
             now = Date.now();
         }, 1000);
 
-        return () => clearInterval(interval);
+        connectionChannel = supabase.channel("kds-connection");
+        connectionChannel.subscribe((status) => {
+            connected = status === "SUBSCRIBED";
+        });
     });
 
-    // Watch for new orders and play sound
+    onDestroy(() => {
+        clearInterval(interval);
+        if (connectionChannel) {
+            supabase.removeChannel(connectionChannel);
+        }
+    });
+
     $: {
-        // Only consider orders that have items loaded
         const pendingOrders = $orders.filter(
             (o) =>
                 o.status === "pending" &&
@@ -46,11 +56,9 @@
         );
 
         if (!initialized && $orders.length > 0) {
-            // First load - just record existing orders, don't play sound
             pendingOrders.forEach((o) => knownOrderIds.add(o.id));
             initialized = true;
         } else if (initialized) {
-            // Check for new orders we haven't seen (that have items)
             for (const order of pendingOrders) {
                 if (!knownOrderIds.has(order.id)) {
                     knownOrderIds.add(order.id);
@@ -139,7 +147,6 @@
 </script>
 
 <div class="flex-1 p-4 md:p-6 overflow-hidden flex flex-col max-h-full">
-    <!-- Header -->
     <header class="mb-6 flex justify-between items-center flex-none">
         <div>
             <h1
@@ -148,7 +155,21 @@
                 <ChefHat class="w-6 h-6" />
                 Kitchen Display
             </h1>
-            <p class="text-muted-foreground text-sm">
+            <p class="text-muted-foreground text-sm flex items-center gap-2">
+                {#if connected}
+                    <span class="flex items-center gap-1 text-green-500">
+                        <Circle class="w-2 h-2 fill-green-500 text-green-500" />
+                        Live
+                    </span>
+                {:else}
+                    <span
+                        class="flex items-center gap-1 text-red-500 animate-pulse"
+                    >
+                        <Circle class="w-2 h-2 fill-red-500 text-red-500" />
+                        Disconnected
+                    </span>
+                {/if}
+                <span class="text-muted-foreground">·</span>
                 Orders sorted by urgency
             </p>
         </div>
@@ -166,7 +187,6 @@
         </div>
     </header>
 
-    <!-- Orders -->
     <div class="flex-1 overflow-x-auto overflow-y-hidden min-h-0 no-scrollbar">
         <div class="flex gap-4 pb-4 h-full">
             {#each activeOrders as order (order.id)}
@@ -213,16 +233,6 @@
                                         <Clock class="w-3.5 h-3.5 mr-1" />
                                         {formatTime(elapsed)}
                                     </Badge>
-                                    {#if isUrgent && order.status !== "ready"}
-                                        <!-- <div
-                                            class="flex items-center justify-end gap-1 mt-1 text-destructive"
-                                        >
-                                            <AlertTriangle class="w-3 h-3" />
-                                            <span class="text-xs font-semibold"
-                                                >URGENT</span
-                                            >
-                                        </div> -->
-                                    {/if}
                                 </div>
                             </div>
 

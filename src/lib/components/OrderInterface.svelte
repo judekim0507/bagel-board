@@ -31,6 +31,7 @@
     import Check from "lucide-svelte/icons/check";
     import History from "lucide-svelte/icons/history";
     import ArrowRightLeft from "lucide-svelte/icons/arrow-right-left";
+    import RotateCcw from "lucide-svelte/icons/rotate-ccw";
 
     export let teacher: any;
     export let seatId: string = "";
@@ -44,12 +45,25 @@
 
     let cart: any[] = initialCart;
     let submitting = false;
+    let cancellingOrderId: string | null = null;
     let selectedItem: any = null;
     let showCustomizeModal = false;
     let customizeToppings: string[] = [];
     let customizeNotes = "";
     let dietaryNotes = teacher?.dietary_notes || "";
     let activeTab = "menu";
+
+    async function cancelOrder(orderId: string) {
+        cancellingOrderId = orderId;
+        const res = await fetch(`/api/orders/${orderId}`, { method: "DELETE" });
+        cancellingOrderId = null;
+
+        if (res.ok) {
+            toast.success("Order recalled");
+        } else {
+            toast.error("Failed to recall order");
+        }
+    }
 
     // Get orders for this seat (live updated via store)
     $: seatOrders = mode === "waiter" && seatId
@@ -187,24 +201,14 @@
 </script>
 
 <div class="flex flex-col h-full bg-background">
-    <!-- Header -->
     <header
         class="px-6 py-4 border-b bg-card flex justify-between items-center flex-none"
     >
-        <div class="flex items-center gap-4">
-            <!-- <Avatar.Root class="h-10 w-10">
-                <Avatar.Fallback
-                    class="bg-primary text-primary-foreground font-semibold"
-                >
-                    {teacher?.name?.[0]}
-                </Avatar.Fallback>
-            </Avatar.Root> -->
-            <div>
-                <h2 class="text-lg font-semibold text-foreground">
-                    {headerTitle}
-                </h2>
-                <p class="text-sm text-muted-foreground">{teacher?.name}</p>
-            </div>
+        <div>
+            <h2 class="text-lg font-semibold text-foreground">
+                {headerTitle}
+            </h2>
+            <p class="text-sm text-muted-foreground">{teacher?.name}</p>
         </div>
 
         <div class="flex items-center gap-2">
@@ -248,10 +252,8 @@
     </header>
 
     <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
-        <!-- Menu / Order History -->
         <div class="flex-1 overflow-hidden flex flex-col min-h-0">
             {#if mode === "waiter" && hasOrderHistory}
-                <!-- Tabs for waiter mode with order history -->
                 <div class="px-4 md:px-6 pt-4 flex-shrink-0 border-b">
                     <Tabs.Root bind:value={activeTab}>
                         <Tabs.List class="w-full justify-start bg-transparent p-0 h-auto">
@@ -339,7 +341,6 @@
                 </div>
             </ScrollArea>
             {:else if activeTab === "history"}
-            <!-- Order History Tab -->
             <ScrollArea class="flex-1 p-4 md:p-6">
                 <div class="space-y-4">
                     {#each seatOrders as order (order.id)}
@@ -349,7 +350,6 @@
                             class="rounded-xl border bg-card overflow-hidden"
                             transition:slide={{ duration: 200 }}
                         >
-                            <!-- Order Header -->
                             <div class="p-4 border-b bg-muted/30 flex items-center justify-between">
                                 <div class="flex items-center gap-3">
                                     <div class="w-8 h-8 rounded-full flex items-center justify-center {
@@ -377,12 +377,25 @@
                                         </p>
                                     </div>
                                 </div>
-                                <Badge variant="outline" class="text-xs">
-                                    {order.order_items?.length || 0} items
-                                </Badge>
+                                <div class="flex items-center gap-2">
+                                    {#if order.status !== "served"}
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            class="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                            onclick={() => cancelOrder(order.id)}
+                                            disabled={cancellingOrderId === order.id}
+                                        >
+                                            <RotateCcw class="w-3.5 h-3.5 mr-1 {cancellingOrderId === order.id ? 'animate-spin' : ''}" />
+                                            Recall
+                                        </Button>
+                                    {/if}
+                                    <Badge variant="outline" class="text-xs">
+                                        {order.order_items?.length || 0} items
+                                    </Badge>
+                                </div>
                             </div>
 
-                            <!-- Order Items -->
                             <div class="p-4 space-y-2">
                                 {#each order.order_items || [] as item}
                                     <div class="flex items-start gap-3 p-2 rounded-lg bg-muted/30">
@@ -425,7 +438,6 @@
             {/if}
         </div>
 
-        <!-- Cart Sidebar -->
         <div class="w-full md:w-[min(384px,40vw)] border-t md:border-t-0 md:border-l bg-card flex flex-col flex-none max-h-[50vh] md:max-h-none overflow-hidden">
             <div class="p-4 border-b">
                 <div class="flex items-center justify-between">
@@ -529,7 +541,6 @@
     </div>
 </div>
 
-<!-- Customization Modal -->
 <Dialog.Root bind:open={showCustomizeModal}>
     <Dialog.Content class="w-[calc(100vw-2rem)] max-w-lg dark bg-card border-border">
         <Dialog.Header>
