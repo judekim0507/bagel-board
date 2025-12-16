@@ -8,6 +8,7 @@ Real-time breakfast ordering system for BNSS Student Gov. Three modes: **Waiter*
 - SvelteKit
 - Supabase (PostgreSQL + Real-time)
 - Tailwind CSS
+- PWA
 
 ## Setup
 
@@ -21,6 +22,7 @@ PUBLIC_SUPABASE_URL=your-project-url
 PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
 
+Start dev server:
 ```bash
 npm run dev
 ```
