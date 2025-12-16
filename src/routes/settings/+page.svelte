@@ -7,6 +7,7 @@
         getAssignedTables,
         setAssignedTables,
     } from "$lib/utils/tableAssignment";
+    import PinModal from "$lib/components/PinModal.svelte";
 
     import { Button } from "$lib/components/ui/button/index.js";
     import * as Card from "$lib/components/ui/card/index.js";
@@ -37,8 +38,16 @@
     import Save from "lucide-svelte/icons/save";
     import X from "lucide-svelte/icons/x";
     import Coffee from "lucide-svelte/icons/coffee";
+    import Wrench from "lucide-svelte/icons/wrench";
+    import ShieldCheck from "lucide-svelte/icons/shield-check";
 
     let assignedTables: number[] = [];
+
+    // Admin access
+    let adminUnlocked = false;
+    let showPinModal = false;
+    let pendingTab: string | null = null;
+    let configSubTab = "teachers";
     let dbConnected = false;
     let realtimeConnected = false;
     let stats = {
@@ -140,7 +149,7 @@
             // Foreign key constraint - teacher has past orders
             if (error.code === "23503") {
                 toast.error(
-                    `Can't delete "${teacher?.name}" - they have past orders or assignments in the system.`
+                    `Can't delete "${teacher?.name}" - they have past orders or assignments in the system.`,
                 );
             } else {
                 toast.error("Failed to delete teacher");
@@ -282,7 +291,7 @@
             // Foreign key constraint - item is used in past orders
             if (error.code === "23503") {
                 const disable = confirm(
-                    `"${item?.name}" can't be deleted because it's used in past orders.\n\nWould you like to disable it instead? (It won't show up in the menu)`
+                    `"${item?.name}" can't be deleted because it's used in past orders.\n\nWould you like to disable it instead? (It won't show up in the menu)`,
                 );
                 if (disable && item) {
                     await supabase
@@ -414,6 +423,29 @@
         setAssignedTables(assignedTables);
         toast.success("All tables selected!");
     }
+
+    // Protected tabs
+    let activeTab = "overview";
+
+    function handleTabChange(tab: string) {
+        const protectedTabs = ["config", "session"];
+
+        if (protectedTabs.includes(tab) && !adminUnlocked) {
+            pendingTab = tab;
+            showPinModal = true;
+        } else {
+            activeTab = tab;
+        }
+    }
+
+    function handlePinSuccess() {
+        adminUnlocked = true;
+        if (pendingTab) {
+            activeTab = pendingTab;
+            pendingTab = null;
+        }
+        toast.success("Admin access granted");
+    }
 </script>
 
 <div class="flex-1 flex flex-col overflow-hidden">
@@ -438,51 +470,64 @@
 
     <ScrollArea class="flex-1">
         <div class="p-6">
-            <Tabs.Root value="overview" class="w-full">
-                <Tabs.List
-                    class="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent mb-6"
-                >
-                    <Tabs.Trigger
-                        value="overview"
-                        class="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-3"
+            <div class="w-full">
+                <!-- Custom Tab List -->
+                <div class="flex border-b mb-6 gap-1 overflow-x-auto">
+                    <button
+                        class="px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap
+                               {activeTab === 'overview'
+                            ? 'border-primary text-foreground'
+                            : 'border-transparent text-muted-foreground hover:text-foreground'}"
+                        onclick={() => handleTabChange("overview")}
                     >
                         Overview
-                    </Tabs.Trigger>
-                    <Tabs.Trigger
-                        value="session"
-                        class="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-3"
+                    </button>
+                    <button
+                        class="px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap flex items-center gap-2
+                               {activeTab === 'session'
+                            ? 'border-primary text-foreground'
+                            : 'border-transparent text-muted-foreground hover:text-foreground'}"
+                        onclick={() => handleTabChange("session")}
                     >
+                        {#if !adminUnlocked}
+                            <Lock class="w-3.5 h-3.5" />
+                        {/if}
                         Session
-                    </Tabs.Trigger>
-                    <Tabs.Trigger
-                        value="preorder"
-                        class="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-3"
+                    </button>
+                    <button
+                        class="px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap
+                               {activeTab === 'preorder'
+                            ? 'border-primary text-foreground'
+                            : 'border-transparent text-muted-foreground hover:text-foreground'}"
+                        onclick={() => handleTabChange("preorder")}
                     >
                         Pre-order
-                    </Tabs.Trigger>
-                    <Tabs.Trigger
-                        value="tables"
-                        class="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-3"
+                    </button>
+                    <button
+                        class="px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap
+                               {activeTab === 'tables'
+                            ? 'border-primary text-foreground'
+                            : 'border-transparent text-muted-foreground hover:text-foreground'}"
+                        onclick={() => handleTabChange("tables")}
                     >
                         My Tables
-                    </Tabs.Trigger>
-                    <Tabs.Trigger
-                        value="teachers"
-                        class="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-3"
+                    </button>
+                    <button
+                        class="px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap flex items-center gap-2
+                               {activeTab === 'config'
+                            ? 'border-primary text-foreground'
+                            : 'border-transparent text-muted-foreground hover:text-foreground'}"
+                        onclick={() => handleTabChange("config")}
                     >
-                        <Users class="w-4 h-4 mr-2" />
-                        Teachers
-                    </Tabs.Trigger>
-                    <Tabs.Trigger
-                        value="menu"
-                        class="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-3"
-                    >
-                        <UtensilsCrossed class="w-4 h-4 mr-2" />
-                        Menu
-                    </Tabs.Trigger>
-                </Tabs.List>
+                        {#if !adminUnlocked}
+                            <Lock class="w-3.5 h-3.5" />
+                        {/if}
+                        <Wrench class="w-4 h-4" />
+                        Config
+                    </button>
+                </div>
 
-                <Tabs.Content value="overview" class="mt-0">
+                {#if activeTab === "overview"}
                     <div class="space-y-6">
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                             <Card.Root>
@@ -664,9 +709,7 @@
                             </Card.Content>
                         </Card.Root>
                     </div>
-                </Tabs.Content>
-
-                <Tabs.Content value="session" class="mt-0">
+                {:else if activeTab === "session"}
                     <div class="max-w-2xl space-y-6">
                         <Card.Root class="border-destructive/50">
                             <Card.Header>
@@ -692,8 +735,8 @@
                                     <p class="text-sm text-muted-foreground">
                                         <strong class="text-destructive"
                                             >Warning:</strong
-                                        > This action cannot be undone. Use this at
-                                        the end of each meal service.
+                                        > This action cannot be undone. Use this
+                                        at the end of each meal service.
                                     </p>
                                 </div>
                                 <Button
@@ -740,9 +783,7 @@
                             </Card.Content>
                         </Card.Root>
                     </div>
-                </Tabs.Content>
-
-                <Tabs.Content value="preorder" class="mt-0">
+                {:else if activeTab === "preorder"}
                     <div class="max-w-2xl space-y-6">
                         <Card.Root>
                             <Card.Header>
@@ -805,9 +846,7 @@
                             </Card.Content>
                         </Card.Root>
                     </div>
-                </Tabs.Content>
-
-                <Tabs.Content value="tables" class="mt-0">
+                {:else if activeTab === "tables"}
                     <div class="max-w-4xl space-y-6">
                         <Card.Root>
                             <Card.Header>
@@ -872,354 +911,394 @@
                             </Card.Content>
                         </Card.Root>
                     </div>
-                </Tabs.Content>
-
-                <Tabs.Content value="teachers" class="mt-0">
-                    <div class="grid md:grid-cols-2 gap-6">
-                        <!-- Bulk Add Teachers -->
-                        <Card.Root>
-                            <Card.Header>
-                                <Card.Title class="flex items-center gap-2">
-                                    <Plus class="w-5 h-5" />
-                                    Add Teachers
-                                </Card.Title>
-                                <Card.Description>
-                                    One name per line. Duplicates are
-                                    automatically skipped.
-                                </Card.Description>
-                            </Card.Header>
-                            <Card.Content>
-                                <Textarea
-                                    bind:value={bulkTeacherInput}
-                                    placeholder="John Smith
-Jane Doe
-Michael Johnson"
-                                    rows={8}
-                                    class="font-mono text-sm mb-4"
-                                />
-                                <Button
-                                    onclick={addBulkTeachers}
-                                    class="w-full"
-                                >
-                                    <Plus class="w-4 h-4 mr-2" />
-                                    Add Teachers
-                                </Button>
-                            </Card.Content>
-                        </Card.Root>
-
-                        <!-- Existing Teachers -->
-                        <Card.Root>
-                            <Card.Header>
-                                <Card.Title
-                                    class="flex items-center justify-between"
-                                >
-                                    <span class="flex items-center gap-2">
-                                        <Users class="w-5 h-5" />
-                                        Current Teachers
-                                    </span>
-                                    <Badge variant="secondary"
-                                        >{teachers.length}</Badge
-                                    >
-                                </Card.Title>
-                            </Card.Header>
-                            <Card.Content class="p-0">
-                                <div class="max-h-[400px] overflow-y-auto">
-                                    {#each teachers as teacher (teacher.id)}
-                                        {#if editingTeacher?.id === teacher.id}
-                                            <div
-                                                class="p-3 border-b bg-muted/50"
-                                            >
-                                                <Input
-                                                    bind:value={editTeacherName}
-                                                    placeholder="Name"
-                                                    class="mb-2"
-                                                />
-                                                <Input
-                                                    bind:value={
-                                                        editTeacherDietary
-                                                    }
-                                                    placeholder="Dietary notes (optional)"
-                                                    class="mb-2 text-sm"
-                                                />
-                                                <div class="flex gap-2">
-                                                    <Button
-                                                        size="sm"
-                                                        onclick={saveTeacherEdit}
-                                                    >
-                                                        <Save
-                                                            class="w-3 h-3 mr-1"
-                                                        />
-                                                        Save
-                                                    </Button>
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        onclick={cancelTeacherEdit}
-                                                    >
-                                                        Cancel
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        {:else}
-                                            <div
-                                                class="flex items-center justify-between p-3 border-b hover:bg-muted/30 group"
-                                            >
-                                                <div class="min-w-0 flex-1">
-                                                    <p
-                                                        class="font-medium text-foreground truncate"
-                                                    >
-                                                        {teacher.name}
-                                                    </p>
-                                                    {#if teacher.dietary_notes}
-                                                        <p
-                                                            class="text-xs text-orange-400 truncate"
-                                                        >
-                                                            {teacher.dietary_notes}
-                                                        </p>
-                                                    {/if}
-                                                </div>
-                                                <div
-                                                    class="flex gap-1 transition-opacity"
-                                                >
-                                                    <Button
-                                                        size="icon"
-                                                        variant="ghost"
-                                                        class="h-8 w-8"
-                                                        onclick={() =>
-                                                            startEditTeacher(
-                                                                teacher,
-                                                            )}
-                                                    >
-                                                        <Pencil
-                                                            class="w-3.5 h-3.5"
-                                                        />
-                                                    </Button>
-                                                    <Button
-                                                        size="icon"
-                                                        variant="ghost"
-                                                        class="h-8 w-8 text-destructive hover:text-destructive"
-                                                        onclick={() =>
-                                                            deleteTeacher(
-                                                                teacher.id,
-                                                            )}
-                                                    >
-                                                        <Trash2
-                                                            class="w-3.5 h-3.5"
-                                                        />
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        {/if}
-                                    {/each}
-                                    {#if teachers.length === 0}
-                                        <div
-                                            class="p-8 text-center text-muted-foreground"
-                                        >
-                                            <Users
-                                                class="w-10 h-10 mx-auto mb-2 opacity-30"
-                                            />
-                                            <p class="text-sm">
-                                                No teachers yet
-                                            </p>
-                                        </div>
-                                    {/if}
-                                </div>
-                            </Card.Content>
-                        </Card.Root>
-                    </div>
-                </Tabs.Content>
-
-                <Tabs.Content value="menu" class="mt-0">
+                {:else if activeTab === "config"}
                     <div class="space-y-6">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <h3
-                                    class="text-lg font-semibold text-foreground"
-                                >
-                                    Menu Items
-                                </h3>
-                                <p class="text-sm text-muted-foreground">
-                                    {menuItems.length} items • {menuItems.filter(
-                                        (i) => i.available,
-                                    ).length} available
-                                </p>
-                            </div>
-                            <Button onclick={openAddItemModal}>
-                                <Plus class="w-4 h-4 mr-2" />
-                                Add Item
+                        <!-- Config Sub-tabs -->
+                        <div class="flex gap-2">
+                            <Button
+                                variant={configSubTab === "teachers"
+                                    ? "default"
+                                    : "outline"}
+                                onclick={() => (configSubTab = "teachers")}
+                            >
+                                <Users class="w-4 h-4 mr-2" />
+                                Teachers
+                            </Button>
+                            <Button
+                                variant={configSubTab === "menu"
+                                    ? "default"
+                                    : "outline"}
+                                onclick={() => (configSubTab = "menu")}
+                            >
+                                <UtensilsCrossed class="w-4 h-4 mr-2" />
+                                Menu
                             </Button>
                         </div>
 
-                        <div class="grid md:grid-cols-2 gap-4">
-                            <!-- Meals -->
-                            <Card.Root>
-                                <Card.Header class="pb-3">
-                                    <Card.Title
-                                        class="flex items-center gap-2 text-base"
-                                    >
-                                        <UtensilsCrossed class="w-4 h-4" />
-                                        Meals
-                                    </Card.Title>
-                                </Card.Header>
-                                <Card.Content class="p-0">
-                                    <div class="divide-y">
-                                        {#each menuItems.filter((i) => i.category === "meal") as item (item.id)}
-                                            <div
-                                                class="flex items-center justify-between p-3 hover:bg-muted/30 group {!item.available
-                                                    ? 'opacity-50'
-                                                    : ''}"
-                                            >
-                                                <div class="min-w-0 flex-1">
-                                                    <p
-                                                        class="font-medium text-foreground"
-                                                    >
-                                                        {item.name}
-                                                    </p>
-                                                    {#if item.toppings_config?.customizable}
-                                                        <p
-                                                            class="text-xs text-muted-foreground"
-                                                        >
-                                                            Options: {item.toppings_config.options?.join(
-                                                                ", ",
-                                                            )}
-                                                        </p>
-                                                    {/if}
-                                                </div>
-                                                <div
-                                                    class="flex items-center gap-2"
-                                                >
-                                                    <Switch
-                                                        checked={item.available}
-                                                        onCheckedChange={() =>
-                                                            toggleItemAvailability(
-                                                                item,
-                                                            )}
-                                                    />
-                                                    <Button
-                                                        size="icon"
-                                                        variant="ghost"
-                                                        class="h-8 w-8 group"
-                                                        onclick={() =>
-                                                            openEditItemModal(
-                                                                item,
-                                                            )}
-                                                    >
-                                                        <Pencil
-                                                            class="w-3.5 h-3.5"
-                                                        />
-                                                    </Button>
-                                                    <Button
-                                                        size="icon"
-                                                        variant="ghost"
-                                                        class="h-8 w-8 text-destructive"
-                                                        onclick={() =>
-                                                            deleteMenuItem(
-                                                                item.id,
-                                                            )}
-                                                    >
-                                                        <Trash2
-                                                            class="w-3.5 h-3.5"
-                                                        />
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        {:else}
-                                            <div
-                                                class="p-6 text-center text-muted-foreground text-sm"
-                                            >
-                                                No meals added yet
-                                            </div>
-                                        {/each}
-                                    </div>
-                                </Card.Content>
-                            </Card.Root>
+                        {#if configSubTab === "teachers"}
+                            <div class="grid md:grid-cols-2 gap-6">
+                                <!-- Bulk Add Teachers -->
+                                <Card.Root>
+                                    <Card.Header>
+                                        <Card.Title
+                                            class="flex items-center gap-2"
+                                        >
+                                            <Plus class="w-5 h-5" />
+                                            Add Teachers
+                                        </Card.Title>
+                                        <Card.Description>
+                                            One name per line. Duplicates are
+                                            automatically skipped.
+                                        </Card.Description>
+                                    </Card.Header>
+                                    <Card.Content>
+                                        <Textarea
+                                            bind:value={bulkTeacherInput}
+                                            placeholder="John Smith
+Jane Doe
+Michael Johnson"
+                                            rows={8}
+                                            class="font-mono text-sm mb-4"
+                                        />
+                                        <Button
+                                            onclick={addBulkTeachers}
+                                            class="w-full"
+                                        >
+                                            <Plus class="w-4 h-4 mr-2" />
+                                            Add Teachers
+                                        </Button>
+                                    </Card.Content>
+                                </Card.Root>
 
-                            <!-- Drinks -->
-                            <Card.Root>
-                                <Card.Header class="pb-3">
-                                    <Card.Title
-                                        class="flex items-center gap-2 text-base"
-                                    >
-                                        <Coffee class="w-4 h-4" />
-                                        Drinks
-                                    </Card.Title>
-                                </Card.Header>
-                                <Card.Content class="p-0">
-                                    <div class="divide-y">
-                                        {#each menuItems.filter((i) => i.category === "drink") as item (item.id)}
-                                            <div
-                                                class="flex items-center justify-between p-3 hover:bg-muted/30 group {!item.available
-                                                    ? 'opacity-50'
-                                                    : ''}"
+                                <!-- Existing Teachers -->
+                                <Card.Root>
+                                    <Card.Header>
+                                        <Card.Title
+                                            class="flex items-center justify-between"
+                                        >
+                                            <span
+                                                class="flex items-center gap-2"
                                             >
-                                                <div class="min-w-0 flex-1">
-                                                    <p
-                                                        class="font-medium text-foreground"
+                                                <Users class="w-5 h-5" />
+                                                Current Teachers
+                                            </span>
+                                            <Badge variant="secondary"
+                                                >{teachers.length}</Badge
+                                            >
+                                        </Card.Title>
+                                    </Card.Header>
+                                    <Card.Content class="p-0">
+                                        <div
+                                            class="max-h-[400px] overflow-y-auto"
+                                        >
+                                            {#each teachers as teacher (teacher.id)}
+                                                {#if editingTeacher?.id === teacher.id}
+                                                    <div
+                                                        class="p-3 border-b bg-muted/50"
                                                     >
-                                                        {item.name}
-                                                    </p>
-                                                    {#if item.toppings_config?.customizable}
-                                                        <p
-                                                            class="text-xs text-muted-foreground"
+                                                        <Input
+                                                            bind:value={
+                                                                editTeacherName
+                                                            }
+                                                            placeholder="Name"
+                                                            class="mb-2"
+                                                        />
+                                                        <Input
+                                                            bind:value={
+                                                                editTeacherDietary
+                                                            }
+                                                            placeholder="Dietary notes (optional)"
+                                                            class="mb-2 text-sm"
+                                                        />
+                                                        <div class="flex gap-2">
+                                                            <Button
+                                                                size="sm"
+                                                                onclick={saveTeacherEdit}
+                                                            >
+                                                                <Save
+                                                                    class="w-3 h-3 mr-1"
+                                                                />
+                                                                Save
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                onclick={cancelTeacherEdit}
+                                                            >
+                                                                Cancel
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                {:else}
+                                                    <div
+                                                        class="flex items-center justify-between p-3 border-b hover:bg-muted/30 group"
+                                                    >
+                                                        <div
+                                                            class="min-w-0 flex-1"
                                                         >
-                                                            Options: {item.toppings_config.options?.join(
-                                                                ", ",
-                                                            )}
-                                                        </p>
-                                                    {/if}
-                                                </div>
+                                                            <p
+                                                                class="font-medium text-foreground truncate"
+                                                            >
+                                                                {teacher.name}
+                                                            </p>
+                                                            {#if teacher.dietary_notes}
+                                                                <p
+                                                                    class="text-xs text-orange-400 truncate"
+                                                                >
+                                                                    {teacher.dietary_notes}
+                                                                </p>
+                                                            {/if}
+                                                        </div>
+                                                        <div
+                                                            class="flex gap-1 transition-opacity"
+                                                        >
+                                                            <Button
+                                                                size="icon"
+                                                                variant="ghost"
+                                                                class="h-8 w-8"
+                                                                onclick={() =>
+                                                                    startEditTeacher(
+                                                                        teacher,
+                                                                    )}
+                                                            >
+                                                                <Pencil
+                                                                    class="w-3.5 h-3.5"
+                                                                />
+                                                            </Button>
+                                                            <Button
+                                                                size="icon"
+                                                                variant="ghost"
+                                                                class="h-8 w-8 text-destructive hover:text-destructive"
+                                                                onclick={() =>
+                                                                    deleteTeacher(
+                                                                        teacher.id,
+                                                                    )}
+                                                            >
+                                                                <Trash2
+                                                                    class="w-3.5 h-3.5"
+                                                                />
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                {/if}
+                                            {/each}
+                                            {#if teachers.length === 0}
                                                 <div
-                                                    class="flex items-center gap-2"
+                                                    class="p-8 text-center text-muted-foreground"
                                                 >
-                                                    <Switch
-                                                        checked={item.available}
-                                                        onCheckedChange={() =>
-                                                            toggleItemAvailability(
-                                                                item,
-                                                            )}
+                                                    <Users
+                                                        class="w-10 h-10 mx-auto mb-2 opacity-30"
                                                     />
-                                                    <Button
-                                                        size="icon"
-                                                        variant="ghost"
-                                                        class="h-8 w-8 "
-                                                        onclick={() =>
-                                                            openEditItemModal(
-                                                                item,
-                                                            )}
-                                                    >
-                                                        <Pencil
-                                                            class="w-3.5 h-3.5"
-                                                        />
-                                                    </Button>
-                                                    <Button
-                                                        size="icon"
-                                                        variant="ghost"
-                                                        class="h-8 w-8 text-destructive "
-                                                        onclick={() =>
-                                                            deleteMenuItem(
-                                                                item.id,
-                                                            )}
-                                                    >
-                                                        <Trash2
-                                                            class="w-3.5 h-3.5"
-                                                        />
-                                                    </Button>
+                                                    <p class="text-sm">
+                                                        No teachers yet
+                                                    </p>
                                                 </div>
-                                            </div>
-                                        {:else}
-                                            <div
-                                                class="p-6 text-center text-muted-foreground text-sm"
-                                            >
-                                                No drinks added yet
-                                            </div>
-                                        {/each}
+                                            {/if}
+                                        </div>
+                                    </Card.Content>
+                                </Card.Root>
+                            </div>
+                        {:else if configSubTab === "menu"}
+                            <div class="space-y-6">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h3
+                                            class="text-lg font-semibold text-foreground"
+                                        >
+                                            Menu Items
+                                        </h3>
+                                        <p
+                                            class="text-sm text-muted-foreground"
+                                        >
+                                            {menuItems.length} items • {menuItems.filter(
+                                                (i) => i.available,
+                                            ).length} available
+                                        </p>
                                     </div>
-                                </Card.Content>
-                            </Card.Root>
-                        </div>
+                                    <Button onclick={openAddItemModal}>
+                                        <Plus class="w-4 h-4 mr-2" />
+                                        Add Item
+                                    </Button>
+                                </div>
+
+                                <div class="grid md:grid-cols-2 gap-4">
+                                    <!-- Meals -->
+                                    <Card.Root>
+                                        <Card.Header class="pb-3">
+                                            <Card.Title
+                                                class="flex items-center gap-2 text-base"
+                                            >
+                                                <UtensilsCrossed
+                                                    class="w-4 h-4"
+                                                />
+                                                Meals
+                                            </Card.Title>
+                                        </Card.Header>
+                                        <Card.Content class="p-0">
+                                            <div class="divide-y">
+                                                {#each menuItems.filter((i) => i.category === "meal") as item (item.id)}
+                                                    <div
+                                                        class="flex items-center justify-between p-3 hover:bg-muted/30 group {!item.available
+                                                            ? 'opacity-50'
+                                                            : ''}"
+                                                    >
+                                                        <div
+                                                            class="min-w-0 flex-1"
+                                                        >
+                                                            <p
+                                                                class="font-medium text-foreground"
+                                                            >
+                                                                {item.name}
+                                                            </p>
+                                                            {#if item.toppings_config?.customizable}
+                                                                <p
+                                                                    class="text-xs text-muted-foreground"
+                                                                >
+                                                                    Options: {item.toppings_config.options?.join(
+                                                                        ", ",
+                                                                    )}
+                                                                </p>
+                                                            {/if}
+                                                        </div>
+                                                        <div
+                                                            class="flex items-center gap-2"
+                                                        >
+                                                            <Switch
+                                                                checked={item.available}
+                                                                onCheckedChange={() =>
+                                                                    toggleItemAvailability(
+                                                                        item,
+                                                                    )}
+                                                            />
+                                                            <Button
+                                                                size="icon"
+                                                                variant="ghost"
+                                                                class="h-8 w-8 group"
+                                                                onclick={() =>
+                                                                    openEditItemModal(
+                                                                        item,
+                                                                    )}
+                                                            >
+                                                                <Pencil
+                                                                    class="w-3.5 h-3.5"
+                                                                />
+                                                            </Button>
+                                                            <Button
+                                                                size="icon"
+                                                                variant="ghost"
+                                                                class="h-8 w-8 text-destructive"
+                                                                onclick={() =>
+                                                                    deleteMenuItem(
+                                                                        item.id,
+                                                                    )}
+                                                            >
+                                                                <Trash2
+                                                                    class="w-3.5 h-3.5"
+                                                                />
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                {:else}
+                                                    <div
+                                                        class="p-6 text-center text-muted-foreground text-sm"
+                                                    >
+                                                        No meals added yet
+                                                    </div>
+                                                {/each}
+                                            </div>
+                                        </Card.Content>
+                                    </Card.Root>
+
+                                    <!-- Drinks -->
+                                    <Card.Root>
+                                        <Card.Header class="pb-3">
+                                            <Card.Title
+                                                class="flex items-center gap-2 text-base"
+                                            >
+                                                <Coffee class="w-4 h-4" />
+                                                Drinks
+                                            </Card.Title>
+                                        </Card.Header>
+                                        <Card.Content class="p-0">
+                                            <div class="divide-y">
+                                                {#each menuItems.filter((i) => i.category === "drink") as item (item.id)}
+                                                    <div
+                                                        class="flex items-center justify-between p-3 hover:bg-muted/30 group {!item.available
+                                                            ? 'opacity-50'
+                                                            : ''}"
+                                                    >
+                                                        <div
+                                                            class="min-w-0 flex-1"
+                                                        >
+                                                            <p
+                                                                class="font-medium text-foreground"
+                                                            >
+                                                                {item.name}
+                                                            </p>
+                                                            {#if item.toppings_config?.customizable}
+                                                                <p
+                                                                    class="text-xs text-muted-foreground"
+                                                                >
+                                                                    Options: {item.toppings_config.options?.join(
+                                                                        ", ",
+                                                                    )}
+                                                                </p>
+                                                            {/if}
+                                                        </div>
+                                                        <div
+                                                            class="flex items-center gap-2"
+                                                        >
+                                                            <Switch
+                                                                checked={item.available}
+                                                                onCheckedChange={() =>
+                                                                    toggleItemAvailability(
+                                                                        item,
+                                                                    )}
+                                                            />
+                                                            <Button
+                                                                size="icon"
+                                                                variant="ghost"
+                                                                class="h-8 w-8 "
+                                                                onclick={() =>
+                                                                    openEditItemModal(
+                                                                        item,
+                                                                    )}
+                                                            >
+                                                                <Pencil
+                                                                    class="w-3.5 h-3.5"
+                                                                />
+                                                            </Button>
+                                                            <Button
+                                                                size="icon"
+                                                                variant="ghost"
+                                                                class="h-8 w-8 text-destructive "
+                                                                onclick={() =>
+                                                                    deleteMenuItem(
+                                                                        item.id,
+                                                                    )}
+                                                            >
+                                                                <Trash2
+                                                                    class="w-3.5 h-3.5"
+                                                                />
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                {:else}
+                                                    <div
+                                                        class="p-6 text-center text-muted-foreground text-sm"
+                                                    >
+                                                        No drinks added yet
+                                                    </div>
+                                                {/each}
+                                            </div>
+                                        </Card.Content>
+                                    </Card.Root>
+                                </div>
+                            </div>
+                        {/if}
                     </div>
-                </Tabs.Content>
-            </Tabs.Root>
+                {/if}
+            </div>
 
             <p class="text-center text-xs text-muted-foreground/50 pt-8 pb-4">
                 Built by <a
@@ -1334,3 +1413,11 @@ Michael Johnson"
         </Dialog.Footer>
     </Dialog.Content>
 </Dialog.Root>
+
+<!-- Admin PIN Modal -->
+<PinModal
+    bind:open={showPinModal}
+    title="Escalate your access"
+    description="Enter the admin PIN to access this section"
+    on:success={handlePinSuccess}
+/>
