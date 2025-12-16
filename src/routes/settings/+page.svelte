@@ -8,6 +8,7 @@
         setAssignedTables,
     } from "$lib/utils/tableAssignment";
     import PinModal from "$lib/components/PinModal.svelte";
+    import ConfirmDialog from "$lib/components/ConfirmDialog.svelte";
 
     import { Button } from "$lib/components/ui/button/index.js";
     import * as Card from "$lib/components/ui/card/index.js";
@@ -75,6 +76,7 @@
     // Menu management
     let menuItems: any[] = [];
     let showAddItemModal = false;
+    let confirmDialog: ConfirmDialog;
     let editingMenuItem: any = null;
     let newItemName = "";
     let newItemCategory = "meal";
@@ -148,7 +150,13 @@
 
     async function deleteTeacher(id: string) {
         const teacher = teachers.find((t) => t.id === id);
-        if (!confirm(`Delete ${teacher?.name}?`)) return;
+        const confirmed = await confirmDialog.confirm({
+            title: "Delete Teacher",
+            description: `Are you sure you want to delete ${teacher?.name}?`,
+            confirmText: "Delete",
+            variant: "destructive",
+        });
+        if (!confirmed) return;
 
         const { error } = await supabase.from("teachers").delete().eq("id", id);
         if (error) {
@@ -286,7 +294,13 @@
 
     async function deleteMenuItem(id: string) {
         const item = menuItems.find((i) => i.id === id);
-        if (!confirm(`Delete "${item?.name}"?`)) return;
+        const confirmed = await confirmDialog.confirm({
+            title: "Delete Menu Item",
+            description: `Are you sure you want to delete "${item?.name}"?`,
+            confirmText: "Delete",
+            variant: "destructive",
+        });
+        if (!confirmed) return;
 
         const { error } = await supabase
             .from("menu_items")
@@ -296,9 +310,12 @@
         if (error) {
             // Foreign key constraint - item is used in past orders
             if (error.code === "23503") {
-                const disable = confirm(
-                    `"${item?.name}" can't be deleted because it's used in past orders.\n\nWould you like to disable it instead? (It won't show up in the menu)`,
-                );
+                const disable = await confirmDialog.confirm({
+                    title: "Can't Delete Item",
+                    description: `"${item?.name}" can't be deleted because it's used in past orders.\n\nWould you like to disable it instead? (It won't show up in the menu)`,
+                    confirmText: "Disable Item",
+                    cancelText: "Cancel",
+                });
                 if (disable && item) {
                     await supabase
                         .from("menu_items")
@@ -371,9 +388,12 @@
     }
 
     async function resetSession() {
-        const confirmed = confirm(
-            "This will:\n• Check out all teachers\n• DELETE all order history\n• DELETE all pre-orders\n• Reset everything for a new session\n\nAre you sure?",
-        );
+        const confirmed = await confirmDialog.confirm({
+            title: "Reset Session",
+            description: "This will:\n• Check out all teachers\n• DELETE all order history\n• DELETE all pre-orders\n• Reset everything for a new session\n\nAre you sure?",
+            confirmText: "Reset Session",
+            variant: "destructive",
+        });
 
         if (!confirmed) return;
 
@@ -402,8 +422,13 @@
         await loadStats();
     }
 
-    function handleLogout() {
-        if (confirm("Lock the app? You'll need the PIN to access it again.")) {
+    async function handleLogout() {
+        const confirmed = await confirmDialog.confirm({
+            title: "Lock App",
+            description: "You'll need the PIN to access the app again.",
+            confirmText: "Lock App",
+        });
+        if (confirmed) {
             logout();
         }
     }
@@ -1455,3 +1480,6 @@ Michael Johnson"
     description="Enter the admin PIN to access this section"
     on:success={handlePinSuccess}
 />
+
+<!-- Confirm Dialog -->
+<ConfirmDialog bind:this={confirmDialog} />

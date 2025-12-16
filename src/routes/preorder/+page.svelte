@@ -7,6 +7,7 @@
     import { toast } from "svelte-sonner";
 
     import { Button } from "$lib/components/ui/button/index.js";
+    import ConfirmDialog from "$lib/components/ConfirmDialog.svelte";
     import { Input } from "$lib/components/ui/input/index.js";
     import { ScrollArea } from "$lib/components/ui/scroll-area/index.js";
     import { Badge } from "$lib/components/ui/badge/index.js";
@@ -85,9 +86,12 @@
     }
 
     async function handleDelete() {
-        const confirmed = confirm(
-            `Delete ${selectedTeacher?.name}'s pre-order?`,
-        );
+        const confirmed = await confirmDialog.confirm({
+            title: "Delete Pre-order",
+            description: `Delete ${selectedTeacher?.name}'s pre-order?`,
+            confirmText: "Delete",
+            variant: "destructive",
+        });
         if (!confirmed) return;
 
         const success = await deletePreorder(selectedPreorder.id);
@@ -112,6 +116,7 @@
 
     let editingCart: any[] = [];
     let editingPreorderId: string = "";
+    let confirmDialog: ConfirmDialog;
 </script>
 
 <div class="h-full dark">
@@ -349,3 +354,6 @@
         </div>
     {/if}
 </div>
+
+<!-- Confirm Dialog -->
+<ConfirmDialog bind:this={confirmDialog} />

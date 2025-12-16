@@ -21,6 +21,7 @@
     import { audioManager } from "$lib/utils/audio";
 
     import { Button } from "$lib/components/ui/button/index.js";
+    import ConfirmDialog from "$lib/components/ConfirmDialog.svelte";
     import * as Card from "$lib/components/ui/card/index.js";
     import * as Dialog from "$lib/components/ui/dialog/index.js";
     import { Input } from "$lib/components/ui/input/index.js";
@@ -61,6 +62,7 @@
     let moveTargetTableId: number | null = null;
     let movingTeacher: any = null;
     let movingFromSeatId: string | null = null;
+    let confirmDialog: ConfirmDialog;
 
     async function fetchPreorders() {
         const res = await fetch("/api/preorders?fulfilled=false");
@@ -234,9 +236,11 @@
     async function handleCheckout() {
         if (!selectedSeatId || !selectedTeacher) return;
 
-        const confirmed = confirm(
-            `Check out ${selectedTeacher.name}? This will remove them from this seat.`,
-        );
+        const confirmed = await confirmDialog.confirm({
+            title: "Check Out",
+            description: `Check out ${selectedTeacher.name}? This will remove them from this seat.`,
+            confirmText: "Check Out",
+        });
 
         if (!confirmed) return;
 
@@ -984,3 +988,6 @@
         {/if}
     </Dialog.Content>
 </Dialog.Root>
+
+<!-- Confirm Dialog -->
+<ConfirmDialog bind:this={confirmDialog} />
