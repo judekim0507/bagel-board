@@ -535,7 +535,13 @@
                 startTime = today.toISOString();
             }
 
-            const [ordersRes, preordersRes, assignmentsRes, teachersRes, menuRes] = await Promise.all([
+            const [
+                ordersRes,
+                preordersRes,
+                assignmentsRes,
+                teachersRes,
+                menuRes,
+            ] = await Promise.all([
                 supabase
                     .from("orders")
                     .select("*, order_items(*, menu_items(name, category))")
@@ -560,10 +566,20 @@
                     totalPreorders: preordersRes.data?.length || 0,
                     totalAssignments: assignmentsRes.data?.length || 0,
                     ordersByStatus: {
-                        pending: ordersRes.data?.filter(o => o.status === "pending").length || 0,
-                        preparing: ordersRes.data?.filter(o => o.status === "preparing").length || 0,
-                        ready: ordersRes.data?.filter(o => o.status === "ready").length || 0,
-                        served: ordersRes.data?.filter(o => o.status === "served").length || 0,
+                        pending:
+                            ordersRes.data?.filter(
+                                (o) => o.status === "pending",
+                            ).length || 0,
+                        preparing:
+                            ordersRes.data?.filter(
+                                (o) => o.status === "preparing",
+                            ).length || 0,
+                        ready:
+                            ordersRes.data?.filter((o) => o.status === "ready")
+                                .length || 0,
+                        served:
+                            ordersRes.data?.filter((o) => o.status === "served")
+                                .length || 0,
                     },
                 },
                 orders: ordersRes.data || [],
@@ -573,7 +589,9 @@
                 menuItems: menuRes.data || [],
             };
 
-            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+                type: "application/json",
+            });
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
@@ -646,14 +664,14 @@
                 <Settings class="w-6 h-6" />
                 Settings
             </h1>
-            <p class="text-sm text-muted-foreground">
+            <!-- <p class="text-sm text-muted-foreground">
                 Manage system •
                 {#if dbConnected && realtimeConnected}
                     System Live
                 {:else}
                     System Offline
                 {/if}
-            </p>
+            </p> -->
         </div>
     </header>
 
@@ -978,16 +996,24 @@
                                     Export Session Data
                                 </Card.Title>
                                 <Card.Description>
-                                    Download all session data including orders, assignments, and configuration.
+                                    Download all session data including orders,
+                                    assignments, and configuration.
                                 </Card.Description>
                             </Card.Header>
                             <Card.Content>
                                 <p class="text-sm text-muted-foreground mb-4">
-                                    Exports as JSON file with orders, pre-orders, seat assignments, teacher list, and menu items.
+                                    Exports as JSON file with orders,
+                                    pre-orders, seat assignments, teacher list,
+                                    and menu items.
                                 </p>
-                                <Button onclick={exportSession} disabled={exporting}>
+                                <Button
+                                    onclick={exportSession}
+                                    disabled={exporting}
+                                >
                                     {#if exporting}
-                                        <RefreshCw class="w-4 h-4 mr-2 animate-spin" />
+                                        <RefreshCw
+                                            class="w-4 h-4 mr-2 animate-spin"
+                                        />
                                         Exporting...
                                     {:else}
                                         <Download class="w-4 h-4 mr-2" />

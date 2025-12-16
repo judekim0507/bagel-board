@@ -156,7 +156,7 @@
                 Kitchen Display
             </h1>
             <p class="text-muted-foreground text-sm flex items-center gap-2">
-                {#if connected}
+                <!-- {#if connected}
                     <span class="flex items-center gap-1 text-green-500">
                         <Circle class="w-2 h-2 fill-green-500 text-green-500" />
                         Live
@@ -169,8 +169,8 @@
                         Disconnected
                     </span>
                 {/if}
-                <span class="text-muted-foreground">·</span>
-                Orders sorted by urgency
+                <span class="text-muted-foreground">·</span> -->
+                <!-- Orders sorted by urgency -->
             </p>
         </div>
         <div class="flex items-center gap-3">
