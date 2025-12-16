@@ -522,7 +522,6 @@
                         {#if !adminUnlocked}
                             <Lock class="w-3.5 h-3.5" />
                         {/if}
-                        <Wrench class="w-4 h-4" />
                         Config
                     </button>
                 </div>
@@ -920,6 +919,9 @@
                                     ? "default"
                                     : "outline"}
                                 onclick={() => (configSubTab = "teachers")}
+                                class={configSubTab === "teachers"
+                                    ? "bg-primary text-primary-foreground"
+                                    : "bg-muted text-muted-foreground"}
                             >
                                 <Users class="w-4 h-4 mr-2" />
                                 Teachers
@@ -929,6 +931,9 @@
                                     ? "default"
                                     : "outline"}
                                 onclick={() => (configSubTab = "menu")}
+                                class={configSubTab === "menu"
+                                    ? "bg-primary text-primary-foreground"
+                                    : "bg-muted text-muted-foreground"}
                             >
                                 <UtensilsCrossed class="w-4 h-4 mr-2" />
                                 Menu
@@ -1349,7 +1354,9 @@ Michael Johnson"
                             ? "default"
                             : "outline"}
                         onclick={() => (newItemCategory = "meal")}
-                        class="flex-1"
+                        class={newItemCategory === "meal"
+                            ? "bg-primary text-primary-foreground flex-1"
+                            : "bg-muted text-muted-foreground flex-1"}
                     >
                         <UtensilsCrossed class="w-4 h-4 mr-2" />
                         Meal
@@ -1359,7 +1366,9 @@ Michael Johnson"
                             ? "default"
                             : "outline"}
                         onclick={() => (newItemCategory = "drink")}
-                        class="flex-1"
+                        class={newItemCategory === "drink"
+                            ? "bg-primary text-primary-foreground flex-1"
+                            : "bg-muted text-muted-foreground flex-1"}
                     >
                         <Coffee class="w-4 h-4 mr-2" />
                         Drink
@@ -1407,7 +1416,6 @@ Michael Johnson"
                 Cancel
             </Button>
             <Button onclick={saveMenuItem}>
-                <Save class="w-4 h-4 mr-2" />
                 {editingMenuItem ? "Update" : "Add Item"}
             </Button>
         </Dialog.Footer>
