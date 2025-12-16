@@ -56,7 +56,19 @@
         open = false;
         dispatch("cancel");
     }
+
+    function handleKeyboard(e: KeyboardEvent) {
+        if (!open) return;
+        if (e.key >= "0" && e.key <= "9") {
+            handleKeyPress(e.key);
+        } else if (e.key === "Backspace") {
+            e.preventDefault();
+            handleDelete();
+        }
+    }
 </script>
+
+<svelte:window on:keydown={handleKeyboard} />
 
 <Dialog.Root bind:open onOpenChange={(isOpen) => !isOpen && handleClose()}>
     <Dialog.Content

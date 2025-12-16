@@ -38,7 +38,17 @@
             }, 600);
         }
     }
+
+    function handleKeyboard(e: KeyboardEvent) {
+        if (e.key >= "0" && e.key <= "9") {
+            handleKeyPress(e.key);
+        } else if (e.key === "Backspace") {
+            handleDelete();
+        }
+    }
 </script>
+
+<svelte:window on:keydown={handleKeyboard} />
 
 <div
     class="fixed inset-0 bg-stone-950 z-50 flex flex-col items-center justify-center"

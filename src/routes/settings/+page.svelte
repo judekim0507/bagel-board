@@ -69,7 +69,7 @@
     let teacherSearchQuery = "";
 
     $: filteredTeachers = teachers.filter((t) =>
-        t.name.toLowerCase().includes(teacherSearchQuery.toLowerCase())
+        t.name.toLowerCase().includes(teacherSearchQuery.toLowerCase()),
     );
 
     // Menu management
@@ -998,7 +998,9 @@ Michael Johnson"
                                             >
                                         </Card.Title>
                                         <div class="relative mt-2">
-                                            <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                            <Search
+                                                class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"
+                                            />
                                             <Input
                                                 type="text"
                                                 placeholder="Search teachers..."
@@ -1009,7 +1011,7 @@ Michael Johnson"
                                     </Card.Header>
                                     <Card.Content class="p-0">
                                         <div
-                                            class="max-h-[350px] overflow-y-auto"
+                                            class="max-h-[350px] overflow-y-auto px-3"
                                         >
                                             {#each filteredTeachers as teacher (teacher.id)}
                                                 {#if editingTeacher?.id === teacher.id}
