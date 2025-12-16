@@ -40,6 +40,7 @@
     import Coffee from "lucide-svelte/icons/coffee";
     import Wrench from "lucide-svelte/icons/wrench";
     import ShieldCheck from "lucide-svelte/icons/shield-check";
+    import Search from "lucide-svelte/icons/search";
 
     let assignedTables: number[] = [];
 
@@ -65,6 +66,11 @@
     let editingTeacher: any = null;
     let editTeacherName = "";
     let editTeacherDietary = "";
+    let teacherSearchQuery = "";
+
+    $: filteredTeachers = teachers.filter((t) =>
+        t.name.toLowerCase().includes(teacherSearchQuery.toLowerCase())
+    );
 
     // Menu management
     let menuItems: any[] = [];
@@ -977,7 +983,7 @@ Michael Johnson"
 
                                 <!-- Existing Teachers -->
                                 <Card.Root>
-                                    <Card.Header>
+                                    <Card.Header class="pb-3">
                                         <Card.Title
                                             class="flex items-center justify-between"
                                         >
@@ -991,12 +997,21 @@ Michael Johnson"
                                                 >{teachers.length}</Badge
                                             >
                                         </Card.Title>
+                                        <div class="relative mt-2">
+                                            <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                            <Input
+                                                type="text"
+                                                placeholder="Search teachers..."
+                                                bind:value={teacherSearchQuery}
+                                                class="pl-9 h-9"
+                                            />
+                                        </div>
                                     </Card.Header>
                                     <Card.Content class="p-0">
                                         <div
-                                            class="max-h-[400px] overflow-y-auto"
+                                            class="max-h-[350px] overflow-y-auto"
                                         >
-                                            {#each teachers as teacher (teacher.id)}
+                                            {#each filteredTeachers as teacher (teacher.id)}
                                                 {#if editingTeacher?.id === teacher.id}
                                                     <div
                                                         class="p-3 border-b bg-muted/50"
@@ -1087,16 +1102,25 @@ Michael Johnson"
                                                     </div>
                                                 {/if}
                                             {/each}
-                                            {#if teachers.length === 0}
+                                            {#if filteredTeachers.length === 0}
                                                 <div
                                                     class="p-8 text-center text-muted-foreground"
                                                 >
-                                                    <Users
-                                                        class="w-10 h-10 mx-auto mb-2 opacity-30"
-                                                    />
-                                                    <p class="text-sm">
-                                                        No teachers yet
-                                                    </p>
+                                                    {#if teachers.length === 0}
+                                                        <Users
+                                                            class="w-10 h-10 mx-auto mb-2 opacity-30"
+                                                        />
+                                                        <p class="text-sm">
+                                                            No teachers yet
+                                                        </p>
+                                                    {:else}
+                                                        <Search
+                                                            class="w-10 h-10 mx-auto mb-2 opacity-30"
+                                                        />
+                                                        <p class="text-sm">
+                                                            No results for "{teacherSearchQuery}"
+                                                        </p>
+                                                    {/if}
                                                 </div>
                                             {/if}
                                         </div>
