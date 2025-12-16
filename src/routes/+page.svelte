@@ -91,7 +91,7 @@
             }
         }
         readyOrderPanels = readyOrderPanels.filter((panel) =>
-            readyOrderIds.has(panel.order.id)
+            readyOrderIds.has(panel.order.id),
         );
 
         // Add new panels for newly ready orders
@@ -104,8 +104,12 @@
                     (t) => t.id === order.teacher_id,
                 );
 
-                if (seat && seat.table_id !== null && isTableAssigned(seat.table_id)) {
-                    audioManager.play('ready');
+                if (
+                    seat &&
+                    seat.table_id !== null &&
+                    isTableAssigned(seat.table_id)
+                ) {
+                    audioManager.play("ready");
 
                     readyOrderPanels = [
                         ...readyOrderPanels,
@@ -171,7 +175,9 @@
     function getOrderProgress(seatId: string) {
         const seatOrders = $orders.filter((o) => o.seat_id === seatId);
         const total = seatOrders.length;
-        const ready = seatOrders.filter((o) => o.status === "ready" || o.status === "served").length;
+        const ready = seatOrders.filter(
+            (o) => o.status === "ready" || o.status === "served",
+        ).length;
         return { ready, total };
     }
 
@@ -358,7 +364,7 @@
         const tableSeats = $seats.filter((s) => s.table_id === tableId);
         return tableSeats.filter((seat) => {
             const isOccupied = $seatAssignments.some(
-                (a) => a.seat_id === seat.id && a.active
+                (a) => a.seat_id === seat.id && a.active,
             );
             return !isOccupied;
         });
@@ -459,7 +465,7 @@
         </header>
 
         <!-- Content -->
-        <div class="flex-1 overflow-y-auto">
+        <div class="flex-1 overflow-y-auto no-scrollbar">
             {#if !selectedTableId}
                 <!-- All Tables Grid -->
                 <div
@@ -469,10 +475,14 @@
                     {#each tableIds as id}
                         {@const status = getTableOccupancy(id)}
                         {@const assignedTables = getAssignedTables()}
-                        {@const isAssigned = assignedTables.length === 0 || assignedTables.includes(id)}
+                        {@const isAssigned =
+                            assignedTables.length === 0 ||
+                            assignedTables.includes(id)}
                         <button
                             class="group relative aspect-square rounded-xl border-2 transition-all flex flex-col items-center justify-center gap-1
-                                   {isAssigned ? 'bg-card hover:bg-accent active:scale-[0.98]' : 'bg-muted/30 opacity-50 cursor-not-allowed'}
+                                   {isAssigned
+                                ? 'bg-card hover:bg-accent active:scale-[0.98]'
+                                : 'bg-muted/30 opacity-50 cursor-not-allowed'}
                                    {status.hasAnyone && isAssigned
                                 ? 'border-primary bg-primary/5'
                                 : 'border-border'}"
@@ -526,38 +536,53 @@
 
                                 <button
                                     class="absolute w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center transition-all duration-300 z-10 select-none
-                                           {teacher 
-                                                ? 'bg-card text-card-foreground shadow-md active:scale-95 border-2' 
-                                                : 'bg-muted/10 border-2 border-dashed border-border text-muted-foreground/40 hover:bg-muted/20 hover:border-muted-foreground/50 hover:text-muted-foreground'}"
+                                           {teacher
+                                        ? 'bg-card text-card-foreground shadow-md active:scale-95 border-2'
+                                        : 'bg-muted/10 border-2 border-dashed border-border text-muted-foreground/40 hover:bg-muted/20 hover:border-muted-foreground/50 hover:text-muted-foreground'}"
                                     class:border-border={teacher && !ready}
                                     class:border-green-500={teacher && ready}
-                                    class:shadow-[0_0_20px_-5px_rgba(34,197,94,0.4)]={teacher && ready}
+                                    class:shadow-[0_0_20px_-5px_rgba(34,197,94,0.4)]={teacher &&
+                                        ready}
                                     style="transform: rotate({angle}deg) translate(var(--seat-radius, 210px)) rotate({-angle}deg);"
                                     onclick={() => handleSeatClick(seat.id)}
                                 >
                                     {#if ready}
                                         <div
                                             class="absolute -top-1 -right-1 w-5 h-5 bg-green-500 text-white rounded-full flex items-center justify-center shadow-sm ring-2 ring-background z-20"
-                                            in:scale={{ duration: 200, start: 0.5 }}
+                                            in:scale={{
+                                                duration: 200,
+                                                start: 0.5,
+                                            }}
                                         >
                                             <Check class="w-3 h-3" />
                                         </div>
                                     {/if}
 
                                     {#if teacher}
-                                        <div class="text-center leading-none flex flex-col items-center justify-center gap-1 w-full px-1">
-                                            <span class="text-xs font-bold truncate max-w-full block">
-                                                {teacher.name.split(" ")[0][0]}. {teacher.name.split(" ").slice(1).join(" ")}
+                                        <div
+                                            class="text-center leading-none flex flex-col items-center justify-center gap-1 w-full px-1"
+                                        >
+                                            <span
+                                                class="text-xs font-bold truncate max-w-full block"
+                                            >
+                                                {teacher.name.split(" ")[0][0]}. {teacher.name
+                                                    .split(" ")
+                                                    .slice(1)
+                                                    .join(" ")}
                                             </span>
-                                            
+
                                             {#if progress.total > 0}
-                                                <span class="text-[10px] font-medium bg-muted/50 px-1.5 py-0.5 rounded-full border border-border/50">
+                                                <span
+                                                    class="text-[10px] font-medium bg-muted/50 px-1.5 py-0.5 rounded-full border border-border/50"
+                                                >
                                                     {progress.ready}/{progress.total}
                                                 </span>
                                             {/if}
                                         </div>
                                     {:else}
-                                        <span class="text-lg font-medium">{seat.position}</span>
+                                        <span class="text-lg font-medium"
+                                            >{seat.position}</span
+                                        >
                                     {/if}
                                 </button>
                             {/each}
@@ -580,7 +605,9 @@
         }
     }}
 >
-    <Dialog.Content class="sm:max-w-md dark bg-card border-border overflow-visible">
+    <Dialog.Content
+        class="sm:max-w-md dark bg-card border-border overflow-visible"
+    >
         <Dialog.Header>
             <Dialog.Title class="text-foreground">
                 {editingDietary ? "Dietary Requirements" : "Check In"}
@@ -613,7 +640,9 @@
                             {@const alreadyCheckedIn = $seatAssignments.some(
                                 (a) => a.teacher_id === teacher.id && a.active,
                             )}
-                            {@const hasPreorder = preorderTeacherIds.has(teacher.id)}
+                            {@const hasPreorder = preorderTeacherIds.has(
+                                teacher.id,
+                            )}
                             <button
                                 class="w-full flex items-center gap-3 p-3 rounded-lg transition-colors text-left
                                        {alreadyCheckedIn
@@ -629,22 +658,32 @@
                             >
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-center gap-2">
-                                        <p class="font-medium text-foreground text-sm truncate">
+                                        <p
+                                            class="font-medium text-foreground text-sm truncate"
+                                        >
                                             {teacher.name}
                                         </p>
                                         {#if hasPreorder}
-                                            <Badge class="text-xs bg-green-500/20 text-green-400 border-green-500/30">
-                                                <ShoppingBag class="w-3 h-3 mr-1" />
+                                            <Badge
+                                                class="text-xs bg-green-500/20 text-green-400 border-green-500/30"
+                                            >
+                                                <ShoppingBag
+                                                    class="w-3 h-3 mr-1"
+                                                />
                                                 Pre-order
                                             </Badge>
                                         {/if}
                                     </div>
                                     {#if alreadyCheckedIn}
-                                        <p class="text-xs text-muted-foreground">
+                                        <p
+                                            class="text-xs text-muted-foreground"
+                                        >
                                             Already checked in
                                         </p>
                                     {:else if teacher.dietary_notes}
-                                        <p class="text-xs text-orange-400 truncate">
+                                        <p
+                                            class="text-xs text-orange-400 truncate"
+                                        >
                                             {teacher.dietary_notes}
                                         </p>
                                     {/if}
@@ -661,7 +700,8 @@
                                     variant="outline"
                                     size="sm"
                                     onclick={async () => {
-                                        const newTeacher = await quickAddTeacher(searchQuery);
+                                        const newTeacher =
+                                            await quickAddTeacher(searchQuery);
                                         if (newTeacher) {
                                             selectedTeacher = newTeacher;
                                             dietaryNotes = "";
@@ -675,7 +715,9 @@
                                 </Button>
                             </div>
                         {:else if filteredTeachers.length === 0}
-                            <div class="py-8 text-center text-muted-foreground text-sm">
+                            <div
+                                class="py-8 text-center text-muted-foreground text-sm"
+                            >
                                 No teachers found
                             </div>
                         {/if}
@@ -684,7 +726,9 @@
             </div>
         {:else}
             <div class="space-y-4">
-                <div class="flex items-center justify-between p-3 rounded-lg border bg-muted/50">
+                <div
+                    class="flex items-center justify-between p-3 rounded-lg border bg-muted/50"
+                >
                     <div>
                         <p class="font-medium text-foreground">
                             {selectedTeacher?.name}
@@ -694,7 +738,9 @@
                         </p>
                     </div>
                     {#if preorderTeacherIds.has(selectedTeacher?.id)}
-                        <Badge class="text-xs bg-green-500/20 text-green-400 border-green-500/30">
+                        <Badge
+                            class="text-xs bg-green-500/20 text-green-400 border-green-500/30"
+                        >
                             <ShoppingBag class="w-3 h-3 mr-1" />
                             Pre-order
                         </Badge>
@@ -829,7 +875,9 @@
     <Dialog.Content class="sm:max-w-md dark bg-card border-border">
         <Dialog.Header>
             <Dialog.Title class="text-foreground">
-                {moveTargetTableId ? `Select Seat at Table ${moveTargetTableId}` : "Move to Table"}
+                {moveTargetTableId
+                    ? `Select Seat at Table ${moveTargetTableId}`
+                    : "Move to Table"}
             </Dialog.Title>
             <Dialog.Description class="text-muted-foreground">
                 {#if moveTargetTableId}
@@ -845,14 +893,18 @@
             <div class="grid grid-cols-4 gap-2 py-4">
                 {#each Array.from({ length: 22 }, (_, i) => i + 1) as tableId}
                     {@const availableSeats = getAvailableSeatsForTable(tableId)}
-                    {@const currentTableId = $seats.find(s => s.id === movingFromSeatId)?.table_id}
+                    {@const currentTableId = $seats.find(
+                        (s) => s.id === movingFromSeatId,
+                    )?.table_id}
                     {@const isCurrentTable = tableId === currentTableId}
                     <button
                         class="aspect-square rounded-lg border-2 flex flex-col items-center justify-center gap-0.5 transition-all
                                {availableSeats.length > 0 && !isCurrentTable
-                                   ? 'bg-card hover:bg-accent hover:border-primary cursor-pointer'
-                                   : 'bg-muted/30 opacity-40 cursor-not-allowed'}
-                               {isCurrentTable ? 'border-primary/50' : 'border-border'}"
+                            ? 'bg-card hover:bg-accent hover:border-primary cursor-pointer'
+                            : 'bg-muted/30 opacity-40 cursor-not-allowed'}
+                               {isCurrentTable
+                            ? 'border-primary/50'
+                            : 'border-border'}"
                         disabled={availableSeats.length === 0 || isCurrentTable}
                         onclick={() => {
                             if (availableSeats.length > 0 && !isCurrentTable) {
@@ -860,7 +912,9 @@
                             }
                         }}
                     >
-                        <span class="text-lg font-bold text-foreground">{tableId}</span>
+                        <span class="text-lg font-bold text-foreground"
+                            >{tableId}</span
+                        >
                         <span class="text-[10px] text-muted-foreground">
                             {#if isCurrentTable}
                                 Current
@@ -884,20 +938,26 @@
                     Back to tables
                 </Button>
 
-                <div class="relative w-[200px] h-[200px] mx-auto bg-stone-800 rounded-full flex items-center justify-center">
-                    <span class="text-2xl font-bold text-stone-500">{moveTargetTableId}</span>
+                <div
+                    class="relative w-[200px] h-[200px] mx-auto bg-stone-800 rounded-full flex items-center justify-center"
+                >
+                    <span class="text-2xl font-bold text-stone-500"
+                        >{moveTargetTableId}</span
+                    >
 
                     {#each $seats
                         .filter((s) => s.table_id === moveTargetTableId)
                         .sort((a, b) => a.position - b.position) as seat, i}
-                        {@const isOccupied = $seatAssignments.some((a) => a.seat_id === seat.id && a.active)}
+                        {@const isOccupied = $seatAssignments.some(
+                            (a) => a.seat_id === seat.id && a.active,
+                        )}
                         {@const angle = (i * 360) / 8 - 90}
 
                         <button
                             class="absolute w-10 h-10 rounded-full flex items-center justify-center transition-all
                                    {isOccupied
-                                       ? 'bg-muted/50 text-muted-foreground cursor-not-allowed'
-                                       : 'bg-primary text-primary-foreground hover:scale-110 cursor-pointer shadow-lg'}"
+                                ? 'bg-muted/50 text-muted-foreground cursor-not-allowed'
+                                : 'bg-primary text-primary-foreground hover:scale-110 cursor-pointer shadow-lg'}"
                             style="transform: rotate({angle}deg) translate(100px) rotate({-angle}deg);"
                             disabled={isOccupied}
                             onclick={() => {
@@ -909,7 +969,9 @@
                             {#if isOccupied}
                                 <X class="w-4 h-4" />
                             {:else}
-                                <span class="text-sm font-bold">{seat.position}</span>
+                                <span class="text-sm font-bold"
+                                    >{seat.position}</span
+                                >
                             {/if}
                         </button>
                     {/each}

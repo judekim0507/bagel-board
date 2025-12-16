@@ -39,7 +39,10 @@
     $: {
         // Only consider orders that have items loaded
         const pendingOrders = $orders.filter(
-            (o) => o.status === "pending" && o.order_items && o.order_items.length > 0
+            (o) =>
+                o.status === "pending" &&
+                o.order_items &&
+                o.order_items.length > 0,
         );
 
         if (!initialized && $orders.length > 0) {
@@ -51,7 +54,7 @@
             for (const order of pendingOrders) {
                 if (!knownOrderIds.has(order.id)) {
                     knownOrderIds.add(order.id);
-                    audioManager.play('newOrder');
+                    audioManager.play("newOrder");
                     toast.info("New order received!", { duration: 3000 });
                 }
             }
@@ -68,7 +71,12 @@
     });
 
     $: activeOrders = enrichedOrders
-        .filter((o) => o.status !== "served" && o.order_items && o.order_items.length > 0)
+        .filter(
+            (o) =>
+                o.status !== "served" &&
+                o.order_items &&
+                o.order_items.length > 0,
+        )
         .sort((a, b) => {
             if (a.status === "ready" && b.status !== "ready") return 1;
             if (a.status !== "ready" && b.status === "ready") return -1;
@@ -107,7 +115,7 @@
             body: JSON.stringify({ order_id: orderId, status: "ready" }),
         });
 
-        audioManager.play('ready');
+        audioManager.play("ready");
 
         if (res.ok) {
             toast.success("Order marked ready!");
@@ -159,7 +167,7 @@
     </header>
 
     <!-- Orders -->
-    <div class="flex-1 overflow-x-auto overflow-y-hidden min-h-0">
+    <div class="flex-1 overflow-x-auto overflow-y-hidden min-h-0 no-scrollbar">
         <div class="flex gap-4 pb-4 h-full">
             {#each activeOrders as order (order.id)}
                 {@const elapsed = order.elapsed}
@@ -233,12 +241,14 @@
                             {/if}
                         </Card.Header>
 
-                        <Card.Content class="flex-1 overflow-hidden min-h-0">
-                            <ScrollArea class="h-full">
-                                <div class="space-y-2">
+                        <Card.Content
+                            class="flex-1 overflow-hidden min-h-0 no-scrollbar"
+                        >
+                            <ScrollArea class="h-full no-scrollbar">
+                                <div class="space-y-2 no-scrollbar">
                                     {#each order.order_items || [] as item}
                                         <div
-                                            class="bg-muted/50 border rounded-lg p-3 overflow-hidden"
+                                            class="bg-muted/50 border rounded-lg p-3 overflow-hidden no-scrollbar"
                                         >
                                             <p
                                                 class="font-semibold text-foreground break-words"
