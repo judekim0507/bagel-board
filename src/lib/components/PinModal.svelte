@@ -79,7 +79,7 @@
             <div class="flex gap-2 mb-6" class:animate-shake={shaking}>
                 {#each [0, 1, 2, 3] as i}
                     <div
-                        class="w-12 h-12 rounded-2xl border-2 flex items-center justify-center transition-all
+                        class="w-12 h-12 rounded-xl border-2 flex items-center justify-center transition-all
                                {error
                             ? 'border-destructive bg-destructive/10'
                             : pin.length > i
