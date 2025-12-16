@@ -83,13 +83,92 @@
     let newItemCustomizable = false;
     let newItemToppings = "";
 
+    // Table/Seat configuration
+    let totalTables = 22;
+    let seatsPerTable = 8;
+    let savingTableConfig = false;
+
     onMount(async () => {
         await loadStats();
         await loadTeachers();
         await loadMenuItems();
+        await loadTableConfig();
         assignedTables = getAssignedTables();
         checkRealtimeStatus();
     });
+
+    async function loadTableConfig() {
+        const { data } = await supabase
+            .from("system_config")
+            .select("key, value")
+            .in("key", ["total_tables", "seats_per_table"]);
+
+        if (data) {
+            for (const item of data) {
+                if (item.key === "total_tables") {
+                    totalTables = parseInt(item.value) || 22;
+                } else if (item.key === "seats_per_table") {
+                    seatsPerTable = parseInt(item.value) || 8;
+                }
+            }
+        }
+    }
+
+    async function saveTableConfig() {
+        if (totalTables < 1 || totalTables > 100) {
+            toast.error("Tables must be between 1 and 100");
+            return;
+        }
+        if (seatsPerTable < 1 || seatsPerTable > 20) {
+            toast.error("Seats per table must be between 1 and 20");
+            return;
+        }
+
+        // Check if there are active seat assignments
+        const { count } = await supabase
+            .from("seat_assignments")
+            .select("*", { count: "exact", head: true })
+            .eq("active", true);
+
+        if (count && count > 0) {
+            toast.error(
+                "Can't change table config while teachers are checked in. Reset the session first.",
+            );
+            return;
+        }
+
+        savingTableConfig = true;
+
+        // Save config
+        await supabase.from("system_config").upsert([
+            { key: "total_tables", value: totalTables.toString() },
+            { key: "seats_per_table", value: seatsPerTable.toString() },
+        ]);
+
+        // Regenerate seats
+        await regenerateSeats();
+
+        savingTableConfig = false;
+        toast.success(
+            `Updated to ${totalTables} tables with ${seatsPerTable} seats each`,
+        );
+        await loadStats();
+    }
+
+    async function regenerateSeats() {
+        // Delete existing seats (this will fail if there are FK references)
+        await supabase.from("seats").delete().not("id", "is", null);
+
+        // Create new seats
+        const seats = [];
+        for (let table = 1; table <= totalTables; table++) {
+            for (let position = 1; position <= seatsPerTable; position++) {
+                seats.push({ table_id: table, position });
+            }
+        }
+
+        await supabase.from("seats").insert(seats);
+    }
 
     async function loadTeachers() {
         const { data } = await supabase
@@ -390,7 +469,8 @@
     async function resetSession() {
         const confirmed = await confirmDialog.confirm({
             title: "Reset Session",
-            description: "This will:\n• Check out all teachers\n• DELETE all order history\n• DELETE all pre-orders\n• Reset everything for a new session\n\nAre you sure?",
+            description:
+                "This will:\n• Check out all teachers\n• DELETE all order history\n• DELETE all pre-orders\n• Reset everything for a new session\n\nAre you sure?",
             confirmText: "Reset Session",
             variant: "destructive",
         });
@@ -450,7 +530,7 @@
     }
 
     function selectAllTables() {
-        assignedTables = Array.from({ length: 22 }, (_, i) => i + 1);
+        assignedTables = Array.from({ length: totalTables }, (_, i) => i + 1);
         setAssignedTables(assignedTables);
         toast.success("All tables selected!");
     }
@@ -692,7 +772,7 @@
                                         >
                                         <span
                                             class="text-foreground font-medium"
-                                            >22</span
+                                            >{totalTables}</span
                                         >
                                     </div>
                                     <div class="flex items-center gap-2">
@@ -704,7 +784,7 @@
                                         >
                                         <span
                                             class="text-foreground font-medium"
-                                            >176</span
+                                            >{totalTables * seatsPerTable}</span
                                         >
                                     </div>
                                 </div>
@@ -925,7 +1005,7 @@
                                 <div
                                     class="grid grid-cols-6 md:grid-cols-11 gap-3"
                                 >
-                                    {#each Array.from({ length: 22 }, (_, i) => i + 1) as tableId}
+                                    {#each Array.from({ length: totalTables }, (_, i) => i + 1) as tableId}
                                         <button
                                             class="aspect-square rounded-xl flex items-center justify-center text-xl font-bold transition-all active:scale-95 {assignedTables.includes(
                                                 tableId,
@@ -944,7 +1024,7 @@
                 {:else if activeTab === "config"}
                     <div class="space-y-6">
                         <!-- Config Sub-tabs -->
-                        <div class="flex gap-2">
+                        <div class="flex gap-2 flex-wrap">
                             <Button
                                 variant={configSubTab === "teachers"
                                     ? "default"
@@ -969,13 +1049,25 @@
                                 <UtensilsCrossed class="w-4 h-4 mr-2" />
                                 Menu
                             </Button>
+                            <Button
+                                variant={configSubTab === "tables"
+                                    ? "default"
+                                    : "outline"}
+                                onclick={() => (configSubTab = "tables")}
+                                class={configSubTab === "tables"
+                                    ? "bg-primary text-primary-foreground"
+                                    : "bg-muted text-muted-foreground"}
+                            >
+                                <LayoutGrid class="w-4 h-4 mr-2" />
+                                Tables
+                            </Button>
                         </div>
 
                         {#if configSubTab === "teachers"}
                             <div class="grid md:grid-cols-2 gap-6">
                                 <!-- Bulk Add Teachers -->
-                                <Card.Root>
-                                    <Card.Header>
+                                <Card.Root class="flex flex-col max-h-[450px]">
+                                    <Card.Header class="flex-none">
                                         <Card.Title
                                             class="flex items-center gap-2"
                                         >
@@ -987,18 +1079,19 @@
                                             automatically skipped.
                                         </Card.Description>
                                     </Card.Header>
-                                    <Card.Content>
+                                    <Card.Content
+                                        class="flex-1 flex flex-col min-h-0"
+                                    >
                                         <Textarea
                                             bind:value={bulkTeacherInput}
                                             placeholder="John Smith
 Jane Doe
 Michael Johnson"
-                                            rows={8}
-                                            class="font-mono text-sm mb-4"
+                                            class="font-mono text-sm flex-1 min-h-[120px] max-h-[250px] resize-none"
                                         />
                                         <Button
                                             onclick={addBulkTeachers}
-                                            class="w-full"
+                                            class="w-full mt-4 flex-none"
                                         >
                                             <Plus class="w-4 h-4 mr-2" />
                                             Add Teachers
@@ -1191,7 +1284,7 @@ Michael Johnson"
                                             </Card.Title>
                                         </Card.Header>
                                         <Card.Content class="p-0">
-                                            <div class="divide-y">
+                                            <div class="divide-y px-3">
                                                 {#each menuItems.filter((i) => i.category === "meal") as item (item.id)}
                                                     <div
                                                         class="flex items-center justify-between p-3 hover:bg-muted/30 group {!item.available
@@ -1276,7 +1369,7 @@ Michael Johnson"
                                             </Card.Title>
                                         </Card.Header>
                                         <Card.Content class="p-0">
-                                            <div class="divide-y">
+                                            <div class="divide-y px-3">
                                                 {#each menuItems.filter((i) => i.category === "drink") as item (item.id)}
                                                     <div
                                                         class="flex items-center justify-between p-3 hover:bg-muted/30 group {!item.available
@@ -1350,6 +1443,107 @@ Michael Johnson"
                                         </Card.Content>
                                     </Card.Root>
                                 </div>
+                            </div>
+                        {:else if configSubTab === "tables"}
+                            <div class="max-w-xl space-y-6">
+                                <Card.Root>
+                                    <Card.Header>
+                                        <Card.Title
+                                            class="flex items-center gap-2"
+                                        >
+                                            <LayoutGrid class="w-5 h-5" />
+                                            Table & Seat Configuration
+                                        </Card.Title>
+                                        <Card.Description>
+                                            Configure the number of tables and
+                                            seats per table. Changes will
+                                            regenerate all seats.
+                                        </Card.Description>
+                                    </Card.Header>
+                                    <Card.Content class="space-y-6">
+                                        <div
+                                            class="flex items-start gap-2 p-3 rounded-lg bg-orange-500/10 border border-orange-500/20"
+                                        >
+                                            <AlertTriangle
+                                                class="w-4 h-4 text-orange-400 mt-0.5 flex-shrink-0"
+                                            />
+                                            <p
+                                                class="text-sm text-muted-foreground"
+                                            >
+                                                Changing this will delete all
+                                                existing seats and create new
+                                                ones. Make sure the session is
+                                                reset before changing.
+                                            </p>
+                                        </div>
+
+                                        <div class="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <Label
+                                                    class="text-foreground mb-2 block"
+                                                    >Number of Tables</Label
+                                                >
+                                                <Input
+                                                    type="number"
+                                                    min={1}
+                                                    max={100}
+                                                    bind:value={totalTables}
+                                                    class="text-foreground"
+                                                />
+                                                <p
+                                                    class="text-xs text-muted-foreground mt-1"
+                                                >
+                                                    1-100 tables
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <Label
+                                                    class="text-foreground mb-2 block"
+                                                    >Seats per Table</Label
+                                                >
+                                                <Input
+                                                    type="number"
+                                                    min={1}
+                                                    max={20}
+                                                    bind:value={seatsPerTable}
+                                                    class="text-foreground"
+                                                />
+                                                <p
+                                                    class="text-xs text-muted-foreground mt-1"
+                                                >
+                                                    1-20 seats
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div
+                                            class="bg-muted/50 p-4 rounded-lg border"
+                                        >
+                                            <p
+                                                class="text-sm text-muted-foreground"
+                                            >
+                                                Total capacity: <span
+                                                    class="font-bold text-foreground"
+                                                    >{totalTables *
+                                                        seatsPerTable}</span
+                                                > seats
+                                            </p>
+                                        </div>
+
+                                        <Button
+                                            onclick={saveTableConfig}
+                                            disabled={savingTableConfig}
+                                            class="w-full"
+                                        >
+                                            {#if savingTableConfig}
+                                                Saving...
+                                            {:else}
+                                                <Save class="w-4 h-4 mr-2" />
+                                                Save Configuration
+                                            {/if}
+                                        </Button>
+                                    </Card.Content>
+                                </Card.Root>
                             </div>
                         {/if}
                     </div>

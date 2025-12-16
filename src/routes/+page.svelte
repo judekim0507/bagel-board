@@ -122,9 +122,14 @@
         }
     }
 
+    // Derive total tables from seats data
+    $: totalTables = $seats.length > 0
+        ? Math.max(...$seats.map(s => s.table_id ?? 0))
+        : 22;
+
     $: {
         const assignedTables = getAssignedTables();
-        const allTables = Array.from({ length: 22 }, (_, i) => i + 1);
+        const allTables = Array.from({ length: totalTables }, (_, i) => i + 1);
 
         if (assignedTables.length === 0) {
             tableIds = allTables;
@@ -895,7 +900,7 @@
         {#if !moveTargetTableId}
             <!-- Table Selection -->
             <div class="grid grid-cols-4 gap-2 py-4">
-                {#each Array.from({ length: 22 }, (_, i) => i + 1) as tableId}
+                {#each Array.from({ length: totalTables }, (_, i) => i + 1) as tableId}
                     {@const availableSeats = getAvailableSeatsForTable(tableId)}
                     {@const currentTableId = $seats.find(
                         (s) => s.id === movingFromSeatId,
