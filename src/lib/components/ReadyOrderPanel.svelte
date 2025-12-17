@@ -2,7 +2,6 @@
     import { fly, fade } from "svelte/transition";
     import { createEventDispatcher } from "svelte";
 
-    // shadcn-svelte components
     import { Button } from "$lib/components/ui/button/index.js";
     import * as Card from "$lib/components/ui/card/index.js";
     import { Badge } from "$lib/components/ui/badge/index.js";
@@ -155,7 +154,9 @@
                     </p>
 
                     {#each order.order_items || [] as item}
-                        <div class="p-3 rounded-lg bg-muted/30 border overflow-hidden">
+                        <div
+                            class="p-3 rounded-lg bg-muted/30 border overflow-hidden"
+                        >
                             <p class="font-medium text-foreground break-words">
                                 {item.menu_items?.name || "Unknown Item"}
                             </p>
@@ -174,7 +175,9 @@
                             {/if}
 
                             {#if item.notes}
-                                <p class="text-sm text-yellow-500 mt-2 italic break-words">
+                                <p
+                                    class="text-sm text-yellow-500 mt-2 italic break-words"
+                                >
                                     "{item.notes}"
                                 </p>
                             {/if}

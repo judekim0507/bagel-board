@@ -5,7 +5,6 @@
     import { scale, slide } from "svelte/transition";
     import { toast } from "svelte-sonner";
 
-    // shadcn-svelte components
     import { Button } from "$lib/components/ui/button/index.js";
     import * as Dialog from "$lib/components/ui/dialog/index.js";
     import * as Avatar from "$lib/components/ui/avatar/index.js";
