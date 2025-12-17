@@ -147,7 +147,7 @@
     }
 
     async function submitOrder() {
-        if (cart.length === 0) return;
+        if (cart.length === 0 || submitting) return;
         submitting = true;
 
         // If editing an existing preorder, delete it first
