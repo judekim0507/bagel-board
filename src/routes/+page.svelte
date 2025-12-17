@@ -418,13 +418,13 @@
                 >
                     {selectedTableId ? `Table ${selectedTableId}` : "Tables"}
                 </h1>
-                <p class="text-muted-foreground text-sm">
+                <!-- <p class="text-muted-foreground text-sm">
                     {#if selectedTableId}
                         Select a seat to check in or take order
                     {:else}
                         {occupiedCount} of {$seats.length || 176} seats occupied
                     {/if}
-                </p>
+                </p> -->
             </div>
 
             {#if selectedTableId}
