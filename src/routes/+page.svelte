@@ -63,6 +63,8 @@
     let movingTeacher: any = null;
     let movingFromSeatId: string | null = null;
     let confirmDialog: ConfirmDialog;
+    let pendingPreorder: any = null;
+    let pendingPreorderCart: any[] = [];
 
     async function fetchPreorders() {
         const res = await fetch("/api/preorders?fulfilled=false");
@@ -318,35 +320,14 @@
 
             if (preOrders && preOrders.length > 0) {
                 const preOrder = preOrders[0];
-                toast.info(`Loading ${teacher?.name}'s pre-order...`, {
-                    duration: 2000,
-                });
-
-                const orderRes = await fetch("/api/orders", {
-                    method: "POST",
-                    body: JSON.stringify({
-                        teacher_id: teacherId,
-                        seat_id: selectedSeatId,
-                        device_id: deviceId,
-                        items: preOrder.pre_order_items.map((item: any) => ({
-                            menu_item_id: item.menu_item_id,
-                            toppings: item.toppings || [],
-                            notes: item.notes || "",
-                        })),
-                        from_preorder: true,
-                    }),
-                });
-
-                if (orderRes.ok) {
-                    await fetch(`/api/preorders/${preOrder.id}/fulfill`, {
-                        method: "POST",
-                    });
-                    toast.success("Pre-order loaded and sent to kitchen!");
-                    showTeacherModal = false;
-                    selectedTeacher = null;
-                    editingDietary = false;
-                    return;
-                }
+                pendingPreorder = preOrder;
+                pendingPreorderCart = preOrder.pre_order_items.map((item: any) => ({
+                    menu_item_id: item.menu_item_id,
+                    name: item.menu_items?.name || "Unknown",
+                    toppings: item.toppings || [],
+                    notes: item.notes || "",
+                }));
+                toast.info(`Pre-order loaded - review and submit`, { duration: 3000 });
             }
         }
 
@@ -809,21 +790,29 @@
     </Dialog.Content>
 </Dialog.Root>
 
-<!-- Order Interface Modal -->
 {#if showOrderModal && selectedSeatId && selectedTeacher}
     <div class="fixed inset-0 z-50 bg-background">
         <OrderInterface
             teacher={selectedTeacher}
             seatId={selectedSeatId}
             deviceId={getDeviceId()}
+            initialCart={pendingPreorderCart}
             on:close={async () => {
                 showOrderModal = false;
+                pendingPreorder = null;
+                pendingPreorderCart = [];
                 await fetchSeatAssignments();
             }}
-            on:complete={() => {
+            on:complete={async () => {
+                if (pendingPreorder) {
+                    await fetch(`/api/preorders/${pendingPreorder.id}/fulfill`, { method: "POST" });
+                    await fetchPreorders();
+                }
                 showOrderModal = false;
                 selectedSeatId = null;
                 selectedTableId = null;
+                pendingPreorder = null;
+                pendingPreorderCart = [];
             }}
             on:checkout={handleCheckout}
             on:move={() => openMoveModal(selectedTeacher, selectedSeatId)}
