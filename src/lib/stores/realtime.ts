@@ -56,7 +56,6 @@ async function setupRealtime() {
     supabase
         .channel('public:system_config')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'system_config' }, () => {
-            // Refetch orders when session is reset
             fetchOrders();
             fetchSeatAssignments();
         })
@@ -64,14 +63,12 @@ async function setupRealtime() {
 }
 
 export async function fetchOrders() {
-    // Get session start time from system_config
     const { data: configData } = await supabase
         .from('system_config')
         .select('value')
         .eq('key', 'session_start_time')
         .single();
 
-    // Use session start time if available, otherwise use start of today
     let startTime: string;
     if (configData?.value) {
         startTime = configData.value;

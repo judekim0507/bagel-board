@@ -65,37 +65,61 @@
         }
     }
 
-    // Get orders for this seat (live updated via store)
-    $: seatOrders = mode === "waiter" && seatId
-        ? $orders.filter((o) => o.seat_id === seatId).sort((a, b) =>
-            new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
-          )
-        : [];
+    $: seatOrders =
+        mode === "waiter" && seatId
+            ? $orders
+                  .filter((o) => o.seat_id === seatId)
+                  .sort(
+                      (a, b) =>
+                          new Date(b.created_at || 0).getTime() -
+                          new Date(a.created_at || 0).getTime(),
+                  )
+            : [];
 
     $: hasOrderHistory = seatOrders.length > 0;
 
     function getStatusBadge(status: string) {
         switch (status) {
             case "pending":
-                return { label: "In Queue", class: "bg-orange-500/20 text-orange-400 border-orange-500/30" };
+                return {
+                    label: "In Queue",
+                    class: "bg-orange-500/20 text-orange-400 border-orange-500/30",
+                };
             case "preparing":
-                return { label: "Preparing", class: "bg-blue-500/20 text-blue-400 border-blue-500/30" };
+                return {
+                    label: "Preparing",
+                    class: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+                };
             case "ready":
-                return { label: "Ready", class: "bg-green-500/20 text-green-400 border-green-500/30" };
+                return {
+                    label: "Ready",
+                    class: "bg-green-500/20 text-green-400 border-green-500/30",
+                };
             case "served":
-                return { label: "Served", class: "bg-muted text-muted-foreground border-border" };
+                return {
+                    label: "Served",
+                    class: "bg-muted text-muted-foreground border-border",
+                };
             default:
-                return { label: status, class: "bg-muted text-muted-foreground border-border" };
+                return {
+                    label: status,
+                    class: "bg-muted text-muted-foreground border-border",
+                };
         }
     }
 
     function getStatusIcon(status: string) {
         switch (status) {
-            case "pending": return Clock;
-            case "preparing": return ChefHat;
-            case "ready": return Check;
-            case "served": return Check;
-            default: return Clock;
+            case "pending":
+                return Clock;
+            case "preparing":
+                return ChefHat;
+            case "ready":
+                return Check;
+            case "served":
+                return Check;
+            default:
+                return Clock;
         }
     }
 
@@ -150,7 +174,6 @@
         if (cart.length === 0 || submitting) return;
         submitting = true;
 
-        // If editing an existing preorder, delete it first
         if (existingPreorderId) {
             await fetch(`/api/preorders/${existingPreorderId}`, {
                 method: "DELETE",
@@ -256,7 +279,9 @@
             {#if mode === "waiter" && hasOrderHistory}
                 <div class="px-4 md:px-6 pt-4 flex-shrink-0 border-b">
                     <Tabs.Root bind:value={activeTab}>
-                        <Tabs.List class="w-full justify-start bg-transparent p-0 h-auto">
+                        <Tabs.List
+                            class="w-full justify-start bg-transparent p-0 h-auto"
+                        >
                             <Tabs.Trigger
                                 value="menu"
                                 class="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 pb-3"
@@ -270,7 +295,9 @@
                             >
                                 <History class="w-4 h-4 mr-2" />
                                 Orders
-                                <Badge variant="secondary" class="ml-2 text-xs">{seatOrders.length}</Badge>
+                                <Badge variant="secondary" class="ml-2 text-xs"
+                                    >{seatOrders.length}</Badge
+                                >
                             </Tabs.Trigger>
                         </Tabs.List>
                     </Tabs.Root>
@@ -278,167 +305,222 @@
             {/if}
 
             {#if activeTab === "menu" || mode === "preorder" || !hasOrderHistory}
-            <ScrollArea class="flex-1 p-4 md:p-6">
-                <div class="space-y-8">
-                    {#each groupedItems as group}
-                        {#if group.items.length > 0}
-                            <div>
-                                <div class="flex items-center gap-2 mb-4">
-                                    <svelte:component
-                                        this={group.icon}
-                                        class="w-4 h-4 text-muted-foreground"
-                                    />
-                                    <h3
-                                        class="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
-                                    >
-                                        {group.name}
-                                    </h3>
-                                </div>
-                                <div
-                                    class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
-                                >
-                                    {#each group.items as item}
-                                        <button
-                                            class="group relative bg-card border rounded-xl p-4 text-left hover:border-primary hover:bg-accent transition-all active:scale-[0.98] overflow-hidden"
-                                            on:click={() =>
-                                                openCustomizeModal(item)}
+                <ScrollArea class="flex-1 p-4 md:p-6">
+                    <div class="space-y-8">
+                        {#each groupedItems as group}
+                            {#if group.items.length > 0}
+                                <div>
+                                    <div class="flex items-center gap-2 mb-4">
+                                        <svelte:component
+                                            this={group.icon}
+                                            class="w-4 h-4 text-muted-foreground"
+                                        />
+                                        <h3
+                                            class="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
                                         >
-                                            <p
-                                                class="font-medium text-foreground break-words"
+                                            {group.name}
+                                        </h3>
+                                    </div>
+                                    <div
+                                        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
+                                    >
+                                        {#each group.items as item}
+                                            <button
+                                                class="group relative bg-card border rounded-xl p-4 text-left hover:border-primary hover:bg-accent transition-all active:scale-[0.98] overflow-hidden"
+                                                on:click={() =>
+                                                    openCustomizeModal(item)}
                                             >
-                                                {item.name}
-                                            </p>
-                                            {#if item.toppings_config?.customizable}
-                                                <Badge
-                                                    variant="secondary"
-                                                    class="mt-2 text-xs"
+                                                <p
+                                                    class="font-medium text-foreground break-words"
                                                 >
-                                                    Customizable
-                                                </Badge>
-                                            {/if}
-                                            <div
-                                                class="absolute top-3 right-3 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    {item.name}
+                                                </p>
+                                                {#if item.toppings_config?.customizable}
+                                                    <Badge
+                                                        variant="secondary"
+                                                        class="mt-2 text-xs"
+                                                    >
+                                                        Customizable
+                                                    </Badge>
+                                                {/if}
+                                                <div
+                                                    class="absolute top-3 right-3 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                                >
+                                                    <Plus
+                                                        class="w-3 h-3 text-primary"
+                                                    />
+                                                </div>
+                                            </button>
+                                        {/each}
+                                    </div>
+                                </div>
+                            {/if}
+                        {/each}
+
+                        {#if $menuItems.length === 0}
+                            <div
+                                class="flex flex-col items-center justify-center py-12 text-muted-foreground"
+                            >
+                                <ShoppingBag
+                                    class="w-12 h-12 mb-3 opacity-30"
+                                />
+                                <p>Loading menu...</p>
+                            </div>
+                        {/if}
+                    </div>
+                </ScrollArea>
+            {:else if activeTab === "history"}
+                <ScrollArea class="flex-1 p-4 md:p-6">
+                    <div class="space-y-4">
+                        {#each seatOrders as order (order.id)}
+                            {@const statusBadge = getStatusBadge(order.status)}
+                            {@const StatusIcon = getStatusIcon(order.status)}
+                            <div
+                                class="rounded-xl border bg-card overflow-hidden"
+                                transition:slide={{ duration: 200 }}
+                            >
+                                <div
+                                    class="p-4 border-b bg-muted/30 flex items-center justify-between"
+                                >
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="w-8 h-8 rounded-full flex items-center justify-center {order.status ===
+                                            'ready'
+                                                ? 'bg-green-500/20'
+                                                : order.status === 'pending'
+                                                  ? 'bg-orange-500/20'
+                                                  : order.status === 'preparing'
+                                                    ? 'bg-blue-500/20'
+                                                    : 'bg-muted'}"
+                                        >
+                                            <svelte:component
+                                                this={StatusIcon}
+                                                class="w-4 h-4 {order.status ===
+                                                'ready'
+                                                    ? 'text-green-500'
+                                                    : order.status === 'pending'
+                                                      ? 'text-orange-400'
+                                                      : order.status ===
+                                                          'preparing'
+                                                        ? 'text-blue-400'
+                                                        : 'text-muted-foreground'}"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Badge
+                                                class="{statusBadge.class} border"
                                             >
-                                                <Plus
-                                                    class="w-3 h-3 text-primary"
+                                                {statusBadge.label}
+                                            </Badge>
+                                            <p
+                                                class="text-xs text-muted-foreground mt-1"
+                                            >
+                                                {new Date(
+                                                    order.created_at,
+                                                ).toLocaleTimeString([], {
+                                                    hour: "2-digit",
+                                                    minute: "2-digit",
+                                                })}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        {#if order.status !== "served"}
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                class="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                onclick={() =>
+                                                    cancelOrder(order.id)}
+                                                disabled={cancellingOrderId ===
+                                                    order.id}
+                                            >
+                                                <RotateCcw
+                                                    class="w-3.5 h-3.5 mr-1 {cancellingOrderId ===
+                                                    order.id
+                                                        ? 'animate-spin'
+                                                        : ''}"
                                                 />
+                                                Recall
+                                            </Button>
+                                        {/if}
+                                        <Badge
+                                            variant="outline"
+                                            class="text-xs"
+                                        >
+                                            {order.order_items?.length || 0} items
+                                        </Badge>
+                                    </div>
+                                </div>
+
+                                <div class="p-4 space-y-2">
+                                    {#each order.order_items || [] as item}
+                                        <div
+                                            class="flex items-start gap-3 p-2 rounded-lg bg-muted/30"
+                                        >
+                                            <div
+                                                class="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5"
+                                            >
+                                                {#if item.menu_items?.category === "drink"}
+                                                    <Coffee
+                                                        class="w-3 h-3 text-primary"
+                                                    />
+                                                {:else}
+                                                    <UtensilsCrossed
+                                                        class="w-3 h-3 text-primary"
+                                                    />
+                                                {/if}
                                             </div>
-                                        </button>
+                                            <div class="flex-1 min-w-0">
+                                                <p
+                                                    class="font-medium text-sm text-foreground break-words"
+                                                >
+                                                    {item.menu_items?.name ||
+                                                        "Unknown Item"}
+                                                </p>
+                                                {#if item.toppings && item.toppings.length > 0}
+                                                    <div
+                                                        class="flex flex-wrap gap-1 mt-1"
+                                                    >
+                                                        {#each item.toppings as topping}
+                                                            <Badge
+                                                                variant="secondary"
+                                                                class="text-xs py-0"
+                                                                >{topping}</Badge
+                                                            >
+                                                        {/each}
+                                                    </div>
+                                                {/if}
+                                                {#if item.notes}
+                                                    <p
+                                                        class="text-xs text-yellow-500 mt-1 italic break-words"
+                                                    >
+                                                        "{item.notes}"
+                                                    </p>
+                                                {/if}
+                                            </div>
+                                        </div>
                                     {/each}
                                 </div>
                             </div>
+                        {/each}
+
+                        {#if seatOrders.length === 0}
+                            <div
+                                class="flex flex-col items-center justify-center py-12 text-muted-foreground"
+                            >
+                                <History class="w-12 h-12 mb-3 opacity-30" />
+                                <p>No orders yet</p>
+                            </div>
                         {/if}
-                    {/each}
-
-                    {#if $menuItems.length === 0}
-                        <div
-                            class="flex flex-col items-center justify-center py-12 text-muted-foreground"
-                        >
-                            <ShoppingBag class="w-12 h-12 mb-3 opacity-30" />
-                            <p>Loading menu...</p>
-                        </div>
-                    {/if}
-                </div>
-            </ScrollArea>
-            {:else if activeTab === "history"}
-            <ScrollArea class="flex-1 p-4 md:p-6">
-                <div class="space-y-4">
-                    {#each seatOrders as order (order.id)}
-                        {@const statusBadge = getStatusBadge(order.status)}
-                        {@const StatusIcon = getStatusIcon(order.status)}
-                        <div
-                            class="rounded-xl border bg-card overflow-hidden"
-                            transition:slide={{ duration: 200 }}
-                        >
-                            <div class="p-4 border-b bg-muted/30 flex items-center justify-between">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-full flex items-center justify-center {
-                                        order.status === 'ready' ? 'bg-green-500/20' :
-                                        order.status === 'pending' ? 'bg-orange-500/20' :
-                                        order.status === 'preparing' ? 'bg-blue-500/20' :
-                                        'bg-muted'
-                                    }">
-                                        <svelte:component
-                                            this={StatusIcon}
-                                            class="w-4 h-4 {
-                                                order.status === 'ready' ? 'text-green-500' :
-                                                order.status === 'pending' ? 'text-orange-400' :
-                                                order.status === 'preparing' ? 'text-blue-400' :
-                                                'text-muted-foreground'
-                                            }"
-                                        />
-                                    </div>
-                                    <div>
-                                        <Badge class="{statusBadge.class} border">
-                                            {statusBadge.label}
-                                        </Badge>
-                                        <p class="text-xs text-muted-foreground mt-1">
-                                            {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                        </p>
-                                    </div>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    {#if order.status !== "served"}
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            class="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                            onclick={() => cancelOrder(order.id)}
-                                            disabled={cancellingOrderId === order.id}
-                                        >
-                                            <RotateCcw class="w-3.5 h-3.5 mr-1 {cancellingOrderId === order.id ? 'animate-spin' : ''}" />
-                                            Recall
-                                        </Button>
-                                    {/if}
-                                    <Badge variant="outline" class="text-xs">
-                                        {order.order_items?.length || 0} items
-                                    </Badge>
-                                </div>
-                            </div>
-
-                            <div class="p-4 space-y-2">
-                                {#each order.order_items || [] as item}
-                                    <div class="flex items-start gap-3 p-2 rounded-lg bg-muted/30">
-                                        <div class="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                            {#if item.menu_items?.category === "drink"}
-                                                <Coffee class="w-3 h-3 text-primary" />
-                                            {:else}
-                                                <UtensilsCrossed class="w-3 h-3 text-primary" />
-                                            {/if}
-                                        </div>
-                                        <div class="flex-1 min-w-0">
-                                            <p class="font-medium text-sm text-foreground break-words">
-                                                {item.menu_items?.name || "Unknown Item"}
-                                            </p>
-                                            {#if item.toppings && item.toppings.length > 0}
-                                                <div class="flex flex-wrap gap-1 mt-1">
-                                                    {#each item.toppings as topping}
-                                                        <Badge variant="secondary" class="text-xs py-0">{topping}</Badge>
-                                                    {/each}
-                                                </div>
-                                            {/if}
-                                            {#if item.notes}
-                                                <p class="text-xs text-yellow-500 mt-1 italic break-words">"{item.notes}"</p>
-                                            {/if}
-                                        </div>
-                                    </div>
-                                {/each}
-                            </div>
-                        </div>
-                    {/each}
-
-                    {#if seatOrders.length === 0}
-                        <div class="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                            <History class="w-12 h-12 mb-3 opacity-30" />
-                            <p>No orders yet</p>
-                        </div>
-                    {/if}
-                </div>
-            </ScrollArea>
+                    </div>
+                </ScrollArea>
             {/if}
         </div>
 
-        <div class="w-full md:w-[min(384px,40vw)] border-t md:border-t-0 md:border-l bg-card flex flex-col flex-none max-h-[50vh] md:max-h-none overflow-hidden">
+        <div
+            class="w-full md:w-[min(384px,40vw)] border-t md:border-t-0 md:border-l bg-card flex flex-col flex-none max-h-[50vh] md:max-h-none overflow-hidden"
+        >
             <div class="p-4 border-b">
                 <div class="flex items-center justify-between">
                     <h3 class="font-semibold text-foreground">Order</h3>
@@ -469,7 +551,9 @@
                             class="group bg-background border rounded-lg p-3 hover:border-primary/50 transition-colors overflow-hidden"
                             transition:scale={{ duration: 150, start: 0.95 }}
                         >
-                            <div class="flex justify-between items-start mb-1 gap-2">
+                            <div
+                                class="flex justify-between items-start mb-1 gap-2"
+                            >
                                 <p
                                     class="font-medium text-sm flex-1 text-foreground break-words min-w-0"
                                 >
@@ -497,7 +581,9 @@
                                 </div>
                             {/if}
                             {#if item.notes}
-                                <p class="text-xs text-muted-foreground italic break-words">
+                                <p
+                                    class="text-xs text-muted-foreground italic break-words"
+                                >
                                     "{item.notes}"
                                 </p>
                             {/if}
@@ -542,7 +628,9 @@
 </div>
 
 <Dialog.Root bind:open={showCustomizeModal}>
-    <Dialog.Content class="w-[calc(100vw-2rem)] max-w-lg dark bg-card border-border">
+    <Dialog.Content
+        class="w-[calc(100vw-2rem)] max-w-lg dark bg-card border-border"
+    >
         <Dialog.Header>
             <Dialog.Title class="text-foreground"
                 >Customize {selectedItem?.name}</Dialog.Title

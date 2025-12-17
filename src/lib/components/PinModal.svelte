@@ -87,7 +87,6 @@
         </div>
 
         <div class="p-6 flex flex-col items-center">
-            <!-- PIN Display -->
             <div class="flex gap-2 mb-6" class:animate-shake={shaking}>
                 {#each [0, 1, 2, 3] as i}
                     <div
@@ -114,7 +113,6 @@
                 <p class="text-destructive text-sm mb-3">Incorrect PIN</p>
             {/if}
 
-            <!-- Keypad -->
             <div class="grid grid-cols-3 gap-2 w-full max-w-[220px]">
                 {#each ["1", "2", "3", "4", "5", "6", "7", "8", "9"] as digit}
                     <button

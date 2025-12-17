@@ -88,7 +88,6 @@
         const currentReadyOrders = $orders.filter((o) => o.status === "ready");
         const readyOrderIds = new Set(currentReadyOrders.map((o) => o.id));
 
-        // Remove panels and notifiedOrderIds for orders that are no longer ready
         for (const panel of readyOrderPanels) {
             if (!readyOrderIds.has(panel.order.id)) {
                 notifiedOrderIds.delete(panel.order.id);
@@ -98,7 +97,6 @@
             readyOrderIds.has(panel.order.id),
         );
 
-        // Add new panels for newly ready orders
         for (const order of currentReadyOrders) {
             if (!notifiedOrderIds.has(order.id)) {
                 notifiedOrderIds.add(order.id);
@@ -124,10 +122,10 @@
         }
     }
 
-    // Derive total tables from seats data
-    $: totalTables = $seats.length > 0
-        ? Math.max(...$seats.map(s => s.table_id ?? 0))
-        : 22;
+    $: totalTables =
+        $seats.length > 0
+            ? Math.max(...$seats.map((s) => s.table_id ?? 0))
+            : 22;
 
     $: {
         const assignedTables = getAssignedTables();
@@ -155,7 +153,6 @@
         );
     }
 
-    // Helpers
     function getTableOccupancy(tableId: number) {
         const tableSeats = $seats.filter((s) => s.table_id === tableId);
         const assignedCount = tableSeats.filter((s) =>
@@ -321,13 +318,17 @@
             if (preOrders && preOrders.length > 0) {
                 const preOrder = preOrders[0];
                 pendingPreorder = preOrder;
-                pendingPreorderCart = preOrder.pre_order_items.map((item: any) => ({
-                    menu_item_id: item.menu_item_id,
-                    name: item.menu_items?.name || "Unknown",
-                    toppings: item.toppings || [],
-                    notes: item.notes || "",
-                }));
-                toast.info(`Pre-order loaded - review and submit`, { duration: 3000 });
+                pendingPreorderCart = preOrder.pre_order_items.map(
+                    (item: any) => ({
+                        menu_item_id: item.menu_item_id,
+                        name: item.menu_items?.name || "Unknown",
+                        toppings: item.toppings || [],
+                        notes: item.notes || "",
+                    }),
+                );
+                toast.info(`Pre-order loaded - review and submit`, {
+                    duration: 3000,
+                });
             }
         }
 
@@ -341,7 +342,6 @@
 
     $: occupiedCount = $seatAssignments.filter((a) => a.active).length;
 
-    // Move teacher functions
     function openMoveModal(teacher: any, fromSeatId: string) {
         movingTeacher = teacher;
         movingFromSeatId = fromSeatId;
@@ -363,14 +363,12 @@
     async function moveTeacherToSeat(newSeatId: string) {
         if (!movingTeacher || !movingFromSeatId) return;
 
-        // Deactivate old assignment
         await supabase
             .from("seat_assignments")
             .update({ active: false })
             .eq("seat_id", movingFromSeatId)
             .eq("active", true);
 
-        // Create new assignment
         const res = await fetch("/api/seats/assign", {
             method: "POST",
             body: JSON.stringify({
@@ -381,7 +379,6 @@
         });
 
         if (res.ok) {
-            // Update orders to new seat
             await supabase
                 .from("orders")
                 .update({ seat_id: newSeatId })
@@ -805,7 +802,10 @@
             }}
             on:complete={async () => {
                 if (pendingPreorder) {
-                    await fetch(`/api/preorders/${pendingPreorder.id}/fulfill`, { method: "POST" });
+                    await fetch(
+                        `/api/preorders/${pendingPreorder.id}/fulfill`,
+                        { method: "POST" },
+                    );
                     await fetchPreorders();
                 }
                 showOrderModal = false;

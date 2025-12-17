@@ -45,8 +45,6 @@
     import Download from "lucide-svelte/icons/download";
 
     let assignedTables: number[] = [];
-
-    // Admin access
     let adminUnlocked = false;
     let showPinModal = false;
     let pendingTab: string | null = null;
@@ -61,8 +59,6 @@
     };
 
     let realtimeChannel: ReturnType<typeof supabase.channel> | null = null;
-
-    // Teachers management
     let teachers: any[] = [];
     let bulkTeacherInput = "";
     let editingTeacher: any = null;
@@ -73,8 +69,6 @@
     $: filteredTeachers = teachers.filter((t) =>
         t.name.toLowerCase().includes(teacherSearchQuery.toLowerCase()),
     );
-
-    // Menu management
     let menuItems: any[] = [];
     let showAddItemModal = false;
     let confirmDialog: ConfirmDialog;
@@ -83,8 +77,6 @@
     let newItemCategory = "meal";
     let newItemCustomizable = false;
     let newItemToppings = "";
-
-    // Table/Seat configuration
     let totalTables = 22;
     let seatsPerTable = 8;
     let savingTableConfig = false;
@@ -124,8 +116,6 @@
             toast.error("Seats per table must be between 1 and 20");
             return;
         }
-
-        // Check if there are active seat assignments
         const { count } = await supabase
             .from("seat_assignments")
             .select("*", { count: "exact", head: true })
@@ -140,13 +130,11 @@
 
         savingTableConfig = true;
 
-        // Save config
         await supabase.from("system_config").upsert([
             { key: "total_tables", value: totalTables.toString() },
             { key: "seats_per_table", value: seatsPerTable.toString() },
         ]);
 
-        // Regenerate seats
         await regenerateSeats();
 
         savingTableConfig = false;
@@ -157,10 +145,8 @@
     }
 
     async function regenerateSeats() {
-        // Delete existing seats (this will fail if there are FK references)
         await supabase.from("seats").delete().not("id", "is", null);
 
-        // Create new seats
         const seats = [];
         for (let table = 1; table <= totalTables; table++) {
             for (let position = 1; position <= seatsPerTable; position++) {
@@ -240,7 +226,6 @@
 
         const { error } = await supabase.from("teachers").delete().eq("id", id);
         if (error) {
-            // Foreign key constraint - teacher has past orders
             if (error.code === "23503") {
                 toast.error(
                     `Can't delete "${teacher?.name}" - they have past orders or assignments in the system.`,
@@ -287,8 +272,6 @@
         editTeacherName = "";
         editTeacherDietary = "";
     }
-
-    // Menu functions
     function openAddItemModal() {
         newItemName = "";
         newItemCategory = "meal";
@@ -388,7 +371,6 @@
             .eq("id", id);
 
         if (error) {
-            // Foreign key constraint - item is used in past orders
             if (error.code === "23503") {
                 const disable = await confirmDialog.confirm({
                     title: "Can't Delete Item",
@@ -478,22 +460,12 @@
 
         if (!confirmed) return;
 
-        // Delete order_items first (child table)
         await supabase.from("order_items").delete().not("id", "is", null);
-
-        // Delete all orders
         await supabase.from("orders").delete().not("id", "is", null);
-
-        // Delete pre_order_items first (child table)
         await supabase.from("pre_order_items").delete().not("id", "is", null);
-
-        // Delete all pre_orders
         await supabase.from("pre_orders").delete().not("id", "is", null);
-
-        // Delete all seat assignments
         await supabase.from("seat_assignments").delete().not("id", "is", null);
 
-        // Store session start time in system_config
         await supabase.from("system_config").upsert({
             key: "session_start_time",
             value: new Date().toISOString(),
@@ -630,8 +602,6 @@
         setAssignedTables(assignedTables);
         toast.success("All tables selected!");
     }
-
-    // Protected tabs
     let activeTab = "overview";
 
     function handleTabChange(tab: string) {

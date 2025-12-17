@@ -102,13 +102,14 @@
     }
 
     function handleEdit() {
-        // Convert pre_order_items to cart format
-        const cartItems = (selectedPreorder.pre_order_items || []).map((item: any) => ({
-            menu_item_id: item.menu_item_id,
-            name: item.menu_items?.name || "Unknown Item",
-            toppings: item.toppings || [],
-            notes: item.notes || "",
-        }));
+        const cartItems = (selectedPreorder.pre_order_items || []).map(
+            (item: any) => ({
+                menu_item_id: item.menu_item_id,
+                name: item.menu_items?.name || "Unknown Item",
+                toppings: item.toppings || [],
+                notes: item.notes || "",
+            }),
+        );
         editingCart = cartItems;
         editingPreorderId = selectedPreorder.id;
         selectedPreorder = null; // This will show OrderInterface
@@ -319,7 +320,9 @@
                     teacher={selectedTeacher}
                     deviceId={getDeviceId()}
                     mode="preorder"
-                    headerTitle={editingPreorderId ? "Edit Pre-order" : "Your Pre-order"}
+                    headerTitle={editingPreorderId
+                        ? "Edit Pre-order"
+                        : "Your Pre-order"}
                     initialCart={editingCart}
                     existingPreorderId={editingPreorderId}
                     on:complete={handleOrderComplete}

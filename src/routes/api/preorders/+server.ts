@@ -33,16 +33,12 @@ export async function POST({ request }) {
     if (!teacher_id || !items || items.length === 0) {
         return json({ error: 'Invalid order data' }, { status: 400 });
     }
-
-    // 0. Update teacher's dietary notes if provided
     if (dietary_notes !== undefined) {
         await supabase
             .from('teachers')
             .update({ dietary_notes })
             .eq('id', teacher_id);
     }
-
-    // 1. Create Pre-Order
     const { data: order, error: orderError } = await supabase
         .from('pre_orders')
         .insert({
@@ -54,8 +50,6 @@ export async function POST({ request }) {
         .single();
 
     if (orderError) return json({ error: orderError.message }, { status: 500 });
-
-    // 2. Create Pre-Order Items
     const orderItems = items.map((item: any) => ({
         pre_order_id: order.id,
         menu_item_id: item.menu_item_id,
