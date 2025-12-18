@@ -2,7 +2,12 @@
     import { fade, scale } from "svelte/transition";
     import { createEventDispatcher } from "svelte";
 
-    export let title = "";
+    interface Props {
+        title?: string;
+        children?: import('svelte').Snippet;
+    }
+
+    let { title = "", children }: Props = $props();
 
     const dispatch = createEventDispatcher();
 
@@ -15,7 +20,7 @@
     <!-- Backdrop -->
     <button
         class="absolute inset-0 bg-black/60 transition-all"
-        on:click={close}
+        onclick={close}
         transition:fade={{ duration: 200 }}
         aria-label="Close modal"
     ></button>
@@ -31,7 +36,7 @@
             >
                 <h2 class="text-xl font-bold text-white">{title}</h2>
                 <button
-                    on:click={close}
+                    onclick={close}
                     class="p-2 -mr-2 text-zinc-400 hover:text-white transition-colors rounded-full hover:bg-zinc-800"
                 >
                     <svg
@@ -53,7 +58,7 @@
         {/if}
 
         <div class="p-6 overflow-y-auto custom-scrollbar">
-            <slot />
+            {@render children?.()}
         </div>
     </div>
 </div>

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { page } from "$app/stores";
+    import { page } from "$app/state";
 
     // Icons
     import UtensilsCrossed from "lucide-svelte/icons/utensils-crossed";
@@ -11,7 +11,7 @@
     <a
         href="/"
         class="flex items-center gap-2 px-4 py-2 rounded-lg transition-all
-               {$page.url.pathname === '/'
+               {page.url.pathname === '/'
             ? 'text-white'
             : 'text-stone-500 hover:text-stone-300'}"
     >
@@ -22,7 +22,7 @@
     <a
         href="/kds"
         class="flex items-center gap-2 px-4 py-2 rounded-lg transition-all
-               {$page.url.pathname === '/kds'
+               {page.url.pathname === '/kds'
             ? 'text-white'
             : 'text-stone-500 hover:text-stone-300'}"
     >
@@ -33,7 +33,7 @@
     <a
         href="/settings"
         class="flex items-center gap-2 px-4 py-2 rounded-lg transition-all
-               {$page.url.pathname === '/settings'
+               {page.url.pathname === '/settings'
             ? 'text-white'
             : 'text-stone-500 hover:text-stone-300'}"
     >

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { run } from 'svelte/legacy';
+
 	import "../app.css";
 	import { isAuthenticated } from "$lib/stores/auth";
 	import { initRealtime } from "$lib/stores/realtime";
@@ -7,12 +9,19 @@
 	import PinProtection from "$lib/components/PinProtection.svelte";
 	import BottomNav from "$lib/components/BottomNav.svelte";
 	import { Toaster } from "svelte-sonner";
-
-	$: if ($isAuthenticated && browser) {
-		initRealtime();
+	interface Props {
+		children?: import('svelte').Snippet;
 	}
 
-	$: isPreorderRoute = $page.url.pathname.startsWith("/preorder");
+	let { children }: Props = $props();
+
+	run(() => {
+		if ($isAuthenticated && browser) {
+			initRealtime();
+		}
+	});
+
+	let isPreorderRoute = $derived($page.url.pathname.startsWith("/preorder"));
 </script>
 
 <svelte:head>
@@ -50,7 +59,7 @@
 	{#if isPreorderRoute}
 		<!-- Preorder Route - Dark theme, standalone, no nav -->
 		<div class="w-full h-full bg-background">
-			<slot />
+			{@render children?.()}
 		</div>
 	{:else if !$isAuthenticated}
 		<!-- PIN Protection -->
@@ -63,7 +72,7 @@
 			<main
 				class="flex-1 bg-card rounded-2xl mt-2 mx-2 overflow-hidden flex flex-col border border-border/50 shadow-xl"
 			>
-				<slot />
+				{@render children?.()}
 			</main>
 			<div class="h-14 bg-stone-950 flex-none px-6">
 				<BottomNav />

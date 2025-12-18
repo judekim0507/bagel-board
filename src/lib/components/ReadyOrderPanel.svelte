@@ -14,11 +14,21 @@
     import User from "lucide-svelte/icons/user";
     import Bell from "lucide-svelte/icons/bell";
 
-    export let order: any;
-    export let seat: any;
-    export let teacher: any;
-    export let isMinimized = false;
-    export let stackIndex = 0;
+    interface Props {
+        order: any;
+        seat: any;
+        teacher: any;
+        isMinimized?: boolean;
+        stackIndex?: number;
+    }
+
+    let {
+        order,
+        seat,
+        teacher,
+        isMinimized = false,
+        stackIndex = 0
+    }: Props = $props();
 
     const dispatch = createEventDispatcher();
 

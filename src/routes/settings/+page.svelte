@@ -44,42 +44,42 @@
     import Search from "lucide-svelte/icons/search";
     import Download from "lucide-svelte/icons/download";
 
-    let assignedTables: number[] = [];
-    let adminUnlocked = false;
-    let showPinModal = false;
+    let assignedTables: number[] = $state([]);
+    let adminUnlocked = $state(false);
+    let showPinModal = $state(false);
     let pendingTab: string | null = null;
-    let configSubTab = "teachers";
-    let dbConnected = false;
-    let realtimeConnected = false;
-    let stats = {
+    let configSubTab = $state("teachers");
+    let dbConnected = $state(false);
+    let realtimeConnected = $state(false);
+    let stats = $state({
         todayOrders: 0,
         activeSeats: 0,
         totalTeachers: 0,
         totalMenuItems: 0,
-    };
+    });
 
     let realtimeChannel: ReturnType<typeof supabase.channel> | null = null;
-    let teachers: any[] = [];
-    let bulkTeacherInput = "";
-    let editingTeacher: any = null;
-    let editTeacherName = "";
-    let editTeacherDietary = "";
-    let teacherSearchQuery = "";
+    let teachers: any[] = $state([]);
+    let bulkTeacherInput = $state("");
+    let editingTeacher: any = $state(null);
+    let editTeacherName = $state("");
+    let editTeacherDietary = $state("");
+    let teacherSearchQuery = $state("");
 
-    $: filteredTeachers = teachers.filter((t) =>
+    let filteredTeachers = $derived(teachers.filter((t) =>
         t.name.toLowerCase().includes(teacherSearchQuery.toLowerCase()),
-    );
-    let menuItems: any[] = [];
-    let showAddItemModal = false;
-    let confirmDialog: ConfirmDialog;
-    let editingMenuItem: any = null;
-    let newItemName = "";
-    let newItemCategory = "meal";
-    let newItemCustomizable = false;
-    let newItemToppings = "";
-    let totalTables = 22;
-    let seatsPerTable = 8;
-    let savingTableConfig = false;
+    ));
+    let menuItems: any[] = $state([]);
+    let showAddItemModal = $state(false);
+    let confirmDialog: ConfirmDialog = $state();
+    let editingMenuItem: any = $state(null);
+    let newItemName = $state("");
+    let newItemCategory = $state("meal");
+    let newItemCustomizable = $state(false);
+    let newItemToppings = $state("");
+    let totalTables = $state(22);
+    let seatsPerTable = $state(8);
+    let savingTableConfig = $state(false);
 
     onMount(async () => {
         await loadStats();
@@ -486,7 +486,7 @@
         }
     }
 
-    let exporting = false;
+    let exporting = $state(false);
 
     async function exportSession() {
         exporting = true;
@@ -602,7 +602,7 @@
         setAssignedTables(assignedTables);
         toast.success("All tables selected!");
     }
-    let activeTab = "overview";
+    let activeTab = $state("overview");
 
     function handleTabChange(tab: string) {
         const protectedTabs = ["config", "session"];

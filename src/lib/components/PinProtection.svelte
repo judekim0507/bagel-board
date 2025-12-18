@@ -7,9 +7,9 @@
     import Delete from "lucide-svelte/icons/delete";
     import UtensilsCrossed from "lucide-svelte/icons/utensils-crossed";
 
-    let pin = "";
-    let error = false;
-    let shaking = false;
+    let pin = $state("");
+    let error = $state(false);
+    let shaking = $state(false);
 
     function handleKeyPress(digit: string) {
         if (pin.length >= 4) return;
@@ -48,7 +48,7 @@
     }
 </script>
 
-<svelte:window on:keydown={handleKeyboard} />
+<svelte:window onkeydown={handleKeyboard} />
 
 <div
     class="fixed inset-0 bg-stone-950 z-50 flex flex-col items-center justify-center"

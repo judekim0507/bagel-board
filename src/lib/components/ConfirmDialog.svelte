@@ -2,12 +2,23 @@
     import * as AlertDialog from "$lib/components/ui/alert-dialog/index.js";
     import AlertTriangle from "lucide-svelte/icons/alert-triangle";
 
-    export let open = false;
-    export let title = "Are you sure?";
-    export let description = "";
-    export let confirmText = "Continue";
-    export let cancelText = "Cancel";
-    export let variant: "default" | "destructive" = "default";
+    interface Props {
+        open?: boolean;
+        title?: string;
+        description?: string;
+        confirmText?: string;
+        cancelText?: string;
+        variant?: "default" | "destructive";
+    }
+
+    let {
+        open = $bindable(false),
+        title = $bindable("Are you sure?"),
+        description = $bindable(""),
+        confirmText = $bindable("Continue"),
+        cancelText = $bindable("Cancel"),
+        variant = $bindable("default")
+    }: Props = $props();
 
     let resolvePromise: ((value: boolean) => void) | null = null;
 

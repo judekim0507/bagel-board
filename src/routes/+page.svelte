@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { run } from 'svelte/legacy';
+
     import {
         seatAssignments,
         seats,
@@ -39,32 +41,32 @@
     import ArrowRightLeft from "lucide-svelte/icons/arrow-right-left";
     import UserPlus from "lucide-svelte/icons/user-plus";
 
-    let selectedTableId: number | null = null;
-    let selectedSeatId: string | null = null;
-    let showTeacherModal = false;
-    let showOrderModal = false;
-    let selectedTeacher: any = null;
-    let searchQuery = "";
-    let loading = true;
-    let editingDietary = false;
-    let dietaryNotes = "";
+    let selectedTableId: number | null = $state(null);
+    let selectedSeatId: string | null = $state(null);
+    let showTeacherModal = $state(false);
+    let showOrderModal = $state(false);
+    let selectedTeacher: any = $state(null);
+    let searchQuery = $state("");
+    let loading = $state(true);
+    let editingDietary = $state(false);
+    let dietaryNotes = $state("");
     let notifiedOrderIds = new Set<string>();
     let readyOrderPanels: Array<{
         order: any;
         seat: any;
         teacher: any;
         isMinimized: boolean;
-    }> = [];
-    let tableIds: number[] = [];
-    let seatTeacherMap = new Map();
-    let preorderTeacherIds = new Set<string>();
-    let showMoveModal = false;
-    let moveTargetTableId: number | null = null;
-    let movingTeacher: any = null;
-    let movingFromSeatId: string | null = null;
-    let confirmDialog: ConfirmDialog;
-    let pendingPreorder: any = null;
-    let pendingPreorderCart: any[] = [];
+    }> = $state([]);
+    let tableIds: number[] = $state([]);
+    let seatTeacherMap = $state(new Map());
+    let preorderTeacherIds = $state(new Set<string>());
+    let showMoveModal = $state(false);
+    let moveTargetTableId: number | null = $state(null);
+    let movingTeacher: any = $state(null);
+    let movingFromSeatId: string | null = $state(null);
+    let confirmDialog: ConfirmDialog = $state();
+    let pendingPreorder: any = $state(null);
+    let pendingPreorderCart: any[] = $state([]);
 
     async function fetchPreorders() {
         const res = await fetch("/api/preorders?fulfilled=false");
@@ -84,7 +86,7 @@
         currentReady.forEach((o) => notifiedOrderIds.add(o.id));
     });
 
-    $: {
+    run(() => {
         const currentReadyOrders = $orders.filter((o) => o.status === "ready");
         const readyOrderIds = new Set(currentReadyOrders.map((o) => o.id));
 
@@ -120,14 +122,14 @@
                 }
             }
         }
-    }
+    });
 
-    $: totalTables =
-        $seats.length > 0
+    let totalTables =
+        $derived($seats.length > 0
             ? Math.max(...$seats.map((s) => s.table_id ?? 0))
-            : 22;
+            : 22);
 
-    $: {
+    run(() => {
         const assignedTables = getAssignedTables();
         const allTables = Array.from({ length: totalTables }, (_, i) => i + 1);
 
@@ -143,15 +145,15 @@
                     .sort((a, b) => a - b),
             ];
         }
-    }
+    });
 
-    $: {
+    run(() => {
         seatTeacherMap = new Map(
             $seatAssignments
                 .filter((a) => a.active)
                 .map((a) => [a.seat_id, a.teachers]),
         );
-    }
+    });
 
     function getTableOccupancy(tableId: number) {
         const tableSeats = $seats.filter((s) => s.table_id === tableId);
@@ -336,11 +338,11 @@
         showOrderModal = true;
     }
 
-    $: filteredTeachers = $teachers.filter((t) =>
+    let filteredTeachers = $derived($teachers.filter((t) =>
         t.name.toLowerCase().includes(searchQuery.toLowerCase()),
-    );
+    ));
 
-    $: occupiedCount = $seatAssignments.filter((a) => a.active).length;
+    let occupiedCount = $derived($seatAssignments.filter((a) => a.active).length);
 
     function openMoveModal(teacher: any, fromSeatId: string) {
         movingTeacher = teacher;
