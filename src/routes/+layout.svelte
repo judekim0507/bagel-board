@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { run } from 'svelte/legacy';
+	import { run } from "svelte/legacy";
 
 	import "../app.css";
 	import { isAuthenticated } from "$lib/stores/auth";
@@ -10,7 +10,7 @@
 	import BottomNav from "$lib/components/BottomNav.svelte";
 	import { Toaster } from "svelte-sonner";
 	interface Props {
-		children?: import('svelte').Snippet;
+		children?: import("svelte").Snippet;
 	}
 
 	let { children }: Props = $props();
@@ -22,6 +22,7 @@
 	});
 
 	let isPreorderRoute = $derived($page.url.pathname.startsWith("/preorder"));
+	let isCapturedRoute = $derived($page.url.pathname.startsWith("/wall"));
 </script>
 
 <svelte:head>
@@ -56,7 +57,7 @@
 >
 	<Toaster richColors position="top-center" theme="dark" />
 
-	{#if isPreorderRoute}
+	{#if isPreorderRoute || isCapturedRoute}
 		<!-- Preorder Route - Dark theme, standalone, no nav -->
 		<div class="w-full h-full bg-background">
 			{@render children?.()}
