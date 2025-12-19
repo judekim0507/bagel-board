@@ -7,7 +7,7 @@
 	const FLASH_DURATION = 0.5;
 	const SPOTLIGHT_HOLD_DURATION = 2.5;
 	const FLYOUT_DURATION = 1.8;
-	const PHOTO_LIFETIME = 60000;
+	const PHOTO_LIFETIME = 600000;
 
 	type Photo = {
 		id: string;
