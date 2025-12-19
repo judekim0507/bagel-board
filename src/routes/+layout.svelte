@@ -23,6 +23,7 @@
 
 	let isPreorderRoute = $derived($page.url.pathname.startsWith("/preorder"));
 	let isCapturedRoute = $derived($page.url.pathname.startsWith("/wall"));
+	let isRecapRoute = $derived($page.url.pathname.startsWith("/recap"));
 </script>
 
 <svelte:head>
@@ -57,7 +58,7 @@
 >
 	<Toaster richColors position="top-center" theme="dark" />
 
-	{#if isPreorderRoute || isCapturedRoute}
+	{#if isPreorderRoute || isCapturedRoute || isRecapRoute}
 		<!-- Preorder Route - Dark theme, standalone, no nav -->
 		<div class="w-full h-full bg-background">
 			{@render children?.()}
