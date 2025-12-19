@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { run } from 'svelte/legacy';
+    import { run } from "svelte/legacy";
 
     import {
         seatAssignments,
@@ -24,6 +24,7 @@
 
     import { Button } from "$lib/components/ui/button/index.js";
     import ConfirmDialog from "$lib/components/ConfirmDialog.svelte";
+    import CameraModal from "$lib/components/CameraModal.svelte";
     import * as Card from "$lib/components/ui/card/index.js";
     import * as Dialog from "$lib/components/ui/dialog/index.js";
     import { Input } from "$lib/components/ui/input/index.js";
@@ -40,6 +41,7 @@
     import ShoppingBag from "lucide-svelte/icons/shopping-bag";
     import ArrowRightLeft from "lucide-svelte/icons/arrow-right-left";
     import UserPlus from "lucide-svelte/icons/user-plus";
+    import CameraIcon from "lucide-svelte/icons/camera";
 
     let selectedTableId: number | null = $state(null);
     let selectedSeatId: string | null = $state(null);
@@ -67,6 +69,7 @@
     let confirmDialog: ConfirmDialog = $state();
     let pendingPreorder: any = $state(null);
     let pendingPreorderCart: any[] = $state([]);
+    let showCameraModal = $state(false);
 
     async function fetchPreorders() {
         const res = await fetch("/api/preorders?fulfilled=false");
@@ -124,10 +127,11 @@
         }
     });
 
-    let totalTables =
-        $derived($seats.length > 0
+    let totalTables = $derived(
+        $seats.length > 0
             ? Math.max(...$seats.map((s) => s.table_id ?? 0))
-            : 22);
+            : 22,
+    );
 
     run(() => {
         const assignedTables = getAssignedTables();
@@ -338,11 +342,15 @@
         showOrderModal = true;
     }
 
-    let filteredTeachers = $derived($teachers.filter((t) =>
-        t.name.toLowerCase().includes(searchQuery.toLowerCase()),
-    ));
+    let filteredTeachers = $derived(
+        $teachers.filter((t) =>
+            t.name.toLowerCase().includes(searchQuery.toLowerCase()),
+        ),
+    );
 
-    let occupiedCount = $derived($seatAssignments.filter((a) => a.active).length);
+    let occupiedCount = $derived(
+        $seatAssignments.filter((a) => a.active).length,
+    );
 
     function openMoveModal(teacher: any, fromSeatId: string) {
         movingTeacher = teacher;
@@ -984,6 +992,21 @@
         {/if}
     </Dialog.Content>
 </Dialog.Root>
+
+<!-- Camera FAB -->
+<button
+    onclick={() => (showCameraModal = true)}
+    class="fixed bottom-20 right-6 z-[100] w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 active:scale-95 transition-all flex items-center justify-center"
+    aria-label="Take photo"
+>
+    <CameraIcon class="w-6 h-6" />
+</button>
+
+<!-- Camera Modal -->
+<CameraModal
+    bind:open={showCameraModal}
+    onClose={() => (showCameraModal = false)}
+/>
 
 <!-- Confirm Dialog -->
 <ConfirmDialog bind:this={confirmDialog} />
