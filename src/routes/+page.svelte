@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { run } from "svelte/legacy";
+
     import {
         seatAssignments,
         seats,
@@ -22,6 +24,7 @@
 
     import { Button } from "$lib/components/ui/button/index.js";
     import ConfirmDialog from "$lib/components/ConfirmDialog.svelte";
+    import CameraModal from "$lib/components/CameraModal.svelte";
     import * as Card from "$lib/components/ui/card/index.js";
     import * as Dialog from "$lib/components/ui/dialog/index.js";
     import { Input } from "$lib/components/ui/input/index.js";
@@ -38,33 +41,35 @@
     import ShoppingBag from "lucide-svelte/icons/shopping-bag";
     import ArrowRightLeft from "lucide-svelte/icons/arrow-right-left";
     import UserPlus from "lucide-svelte/icons/user-plus";
+    import CameraIcon from "lucide-svelte/icons/camera";
 
-    let selectedTableId: number | null = null;
-    let selectedSeatId: string | null = null;
-    let showTeacherModal = false;
-    let showOrderModal = false;
-    let selectedTeacher: any = null;
-    let searchQuery = "";
-    let loading = true;
-    let editingDietary = false;
-    let dietaryNotes = "";
+    let selectedTableId: number | null = $state(null);
+    let selectedSeatId: string | null = $state(null);
+    let showTeacherModal = $state(false);
+    let showOrderModal = $state(false);
+    let selectedTeacher: any = $state(null);
+    let searchQuery = $state("");
+    let loading = $state(true);
+    let editingDietary = $state(false);
+    let dietaryNotes = $state("");
     let notifiedOrderIds = new Set<string>();
     let readyOrderPanels: Array<{
         order: any;
         seat: any;
         teacher: any;
         isMinimized: boolean;
-    }> = [];
-    let tableIds: number[] = [];
-    let seatTeacherMap = new Map();
-    let preorderTeacherIds = new Set<string>();
-    let showMoveModal = false;
-    let moveTargetTableId: number | null = null;
-    let movingTeacher: any = null;
-    let movingFromSeatId: string | null = null;
-    let confirmDialog: ConfirmDialog;
-    let pendingPreorder: any = null;
-    let pendingPreorderCart: any[] = [];
+    }> = $state([]);
+    let tableIds: number[] = $state([]);
+    let seatTeacherMap = $state(new Map());
+    let preorderTeacherIds = $state(new Set<string>());
+    let showMoveModal = $state(false);
+    let moveTargetTableId: number | null = $state(null);
+    let movingTeacher: any = $state(null);
+    let movingFromSeatId: string | null = $state(null);
+    let confirmDialog: ConfirmDialog = $state();
+    let pendingPreorder: any = $state(null);
+    let pendingPreorderCart: any[] = $state([]);
+    let showCameraModal = $state(false);
 
     async function fetchPreorders() {
         const res = await fetch("/api/preorders?fulfilled=false");
@@ -84,7 +89,7 @@
         currentReady.forEach((o) => notifiedOrderIds.add(o.id));
     });
 
-    $: {
+    run(() => {
         const currentReadyOrders = $orders.filter((o) => o.status === "ready");
         const readyOrderIds = new Set(currentReadyOrders.map((o) => o.id));
 
@@ -120,14 +125,15 @@
                 }
             }
         }
-    }
+    });
 
-    $: totalTables =
+    let totalTables = $derived(
         $seats.length > 0
             ? Math.max(...$seats.map((s) => s.table_id ?? 0))
-            : 22;
+            : 22,
+    );
 
-    $: {
+    run(() => {
         const assignedTables = getAssignedTables();
         const allTables = Array.from({ length: totalTables }, (_, i) => i + 1);
 
@@ -143,15 +149,15 @@
                     .sort((a, b) => a - b),
             ];
         }
-    }
+    });
 
-    $: {
+    run(() => {
         seatTeacherMap = new Map(
             $seatAssignments
                 .filter((a) => a.active)
                 .map((a) => [a.seat_id, a.teachers]),
         );
-    }
+    });
 
     function getTableOccupancy(tableId: number) {
         const tableSeats = $seats.filter((s) => s.table_id === tableId);
@@ -336,11 +342,15 @@
         showOrderModal = true;
     }
 
-    $: filteredTeachers = $teachers.filter((t) =>
-        t.name.toLowerCase().includes(searchQuery.toLowerCase()),
+    let filteredTeachers = $derived(
+        $teachers.filter((t) =>
+            t.name.toLowerCase().includes(searchQuery.toLowerCase()),
+        ),
     );
 
-    $: occupiedCount = $seatAssignments.filter((a) => a.active).length;
+    let occupiedCount = $derived(
+        $seatAssignments.filter((a) => a.active).length,
+    );
 
     function openMoveModal(teacher: any, fromSeatId: string) {
         movingTeacher = teacher;
@@ -982,6 +992,21 @@
         {/if}
     </Dialog.Content>
 </Dialog.Root>
+
+<!-- Camera FAB -->
+<button
+    onclick={() => (showCameraModal = true)}
+    class="fixed bottom-20 right-6 z-[100] w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 active:scale-95 transition-all flex items-center justify-center"
+    aria-label="Take photo"
+>
+    <CameraIcon class="w-6 h-6" />
+</button>
+
+<!-- Camera Modal -->
+<CameraModal
+    bind:open={showCameraModal}
+    onClose={() => (showCameraModal = false)}
+/>
 
 <!-- Confirm Dialog -->
 <ConfirmDialog bind:this={confirmDialog} />

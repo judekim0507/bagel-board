@@ -32,25 +32,37 @@
     import ArrowRightLeft from "lucide-svelte/icons/arrow-right-left";
     import RotateCcw from "lucide-svelte/icons/rotate-ccw";
 
-    export let teacher: any;
-    export let seatId: string = "";
-    export let deviceId: string;
-    export let mode: "waiter" | "preorder" = "waiter";
-    export let headerTitle: string = "New Order";
-    export let initialCart: any[] = [];
-    export let existingPreorderId: string = "";
+    interface Props {
+        teacher: any;
+        seatId?: string;
+        deviceId: string;
+        mode?: "waiter" | "preorder";
+        headerTitle?: string;
+        initialCart?: any[];
+        existingPreorderId?: string;
+    }
+
+    let {
+        teacher,
+        seatId = "",
+        deviceId,
+        mode = "waiter",
+        headerTitle = "New Order",
+        initialCart = [],
+        existingPreorderId = ""
+    }: Props = $props();
 
     const dispatch = createEventDispatcher();
 
-    let cart: any[] = initialCart;
-    let submitting = false;
-    let cancellingOrderId: string | null = null;
-    let selectedItem: any = null;
-    let showCustomizeModal = false;
-    let customizeToppings: string[] = [];
-    let customizeNotes = "";
-    let dietaryNotes = teacher?.dietary_notes || "";
-    let activeTab = "menu";
+    let cart: any[] = $state(initialCart);
+    let submitting = $state(false);
+    let cancellingOrderId: string | null = $state(null);
+    let selectedItem: any = $state(null);
+    let showCustomizeModal = $state(false);
+    let customizeToppings: string[] = $state([]);
+    let customizeNotes = $state("");
+    let dietaryNotes = $state(teacher?.dietary_notes || "");
+    let activeTab = $state("menu");
 
     async function cancelOrder(orderId: string) {
         cancellingOrderId = orderId;
@@ -64,8 +76,8 @@
         }
     }
 
-    $: seatOrders =
-        mode === "waiter" && seatId
+    let seatOrders =
+        $derived(mode === "waiter" && seatId
             ? $orders
                   .filter((o) => o.seat_id === seatId)
                   .sort(
@@ -73,9 +85,9 @@
                           new Date(b.created_at || 0).getTime() -
                           new Date(a.created_at || 0).getTime(),
                   )
-            : [];
+            : []);
 
-    $: hasOrderHistory = seatOrders.length > 0;
+    let hasOrderHistory = $derived(seatOrders.length > 0);
 
     function getStatusBadge(status: string) {
         switch (status) {
@@ -129,12 +141,12 @@
         }
     });
 
-    $: categories = ["meal", "drink"];
-    $: groupedItems = categories.map((cat) => ({
+    let categories = $derived(["meal", "drink"]);
+    let groupedItems = $derived(categories.map((cat) => ({
         name: cat === "meal" ? "Main" : "Drinks",
         icon: cat === "meal" ? UtensilsCrossed : Coffee,
         items: $menuItems.filter((i) => i.category === cat),
-    }));
+    })));
 
     function openCustomizeModal(item: any) {
         selectedItem = item;
@@ -310,8 +322,7 @@
                             {#if group.items.length > 0}
                                 <div>
                                     <div class="flex items-center gap-2 mb-4">
-                                        <svelte:component
-                                            this={group.icon}
+                                        <group.icon
                                             class="w-4 h-4 text-muted-foreground"
                                         />
                                         <h3
@@ -326,7 +337,7 @@
                                         {#each group.items as item}
                                             <button
                                                 class="group relative bg-card border rounded-xl p-4 text-left hover:border-primary hover:bg-accent transition-all active:scale-[0.98] overflow-hidden"
-                                                on:click={() =>
+                                                onclick={() =>
                                                     openCustomizeModal(item)}
                                             >
                                                 <p
@@ -392,8 +403,7 @@
                                                     ? 'bg-blue-500/20'
                                                     : 'bg-muted'}"
                                         >
-                                            <svelte:component
-                                                this={StatusIcon}
+                                            <StatusIcon
                                                 class="w-4 h-4 {order.status ===
                                                 'ready'
                                                     ? 'text-green-500'

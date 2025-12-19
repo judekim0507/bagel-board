@@ -19,11 +19,11 @@
     import Trash2 from "lucide-svelte/icons/trash-2";
     import ShoppingBag from "lucide-svelte/icons/shopping-bag";
 
-    let step = 1;
-    let selectedTeacher: any = null;
-    let searchQuery = "";
-    let existingPreorders: Map<string, any> = new Map();
-    let selectedPreorder: any = null;
+    let step = $state(1);
+    let selectedTeacher: any = $state(null);
+    let searchQuery = $state("");
+    let existingPreorders: Map<string, any> = $state(new Map());
+    let selectedPreorder: any = $state(null);
 
     onMount(async () => {
         await fetchTeachers();
@@ -40,9 +40,9 @@
         }
     }
 
-    $: filteredTeachers = $teachers.filter((t) =>
+    let filteredTeachers = $derived($teachers.filter((t) =>
         t.name.toLowerCase().includes(searchQuery.toLowerCase()),
-    );
+    ));
 
     function selectTeacher(teacher: any) {
         selectedTeacher = teacher;
@@ -115,9 +115,9 @@
         selectedPreorder = null; // This will show OrderInterface
     }
 
-    let editingCart: any[] = [];
-    let editingPreorderId: string = "";
-    let confirmDialog: ConfirmDialog;
+    let editingCart: any[] = $state([]);
+    let editingPreorderId: string = $state("");
+    let confirmDialog: ConfirmDialog = $state();
 </script>
 
 <div class="h-full dark">

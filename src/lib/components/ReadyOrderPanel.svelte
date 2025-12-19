@@ -14,11 +14,21 @@
     import User from "lucide-svelte/icons/user";
     import Bell from "lucide-svelte/icons/bell";
 
-    export let order: any;
-    export let seat: any;
-    export let teacher: any;
-    export let isMinimized = false;
-    export let stackIndex = 0;
+    interface Props {
+        order: any;
+        seat: any;
+        teacher: any;
+        isMinimized?: boolean;
+        stackIndex?: number;
+    }
+
+    let {
+        order,
+        seat,
+        teacher,
+        isMinimized = false,
+        stackIndex = 0
+    }: Props = $props();
 
     const dispatch = createEventDispatcher();
 
@@ -34,7 +44,7 @@
 {#if isMinimized}
     <!-- Minimized Tab -->
     <button
-        class="fixed right-0 z-[60] bg-card border border-border border-r-0 rounded-l-xl shadow-lg
+        class="fixed right-0 z-[250] bg-card border border-border border-r-0 rounded-l-xl shadow-lg
                hover:bg-accent transition-all group"
         style="top: calc(40% + {stackIndex * 70}px);"
         onclick={() => dispatch("restore")}
@@ -62,7 +72,7 @@
 {:else}
     <!-- Dimmed Overlay -->
     <button
-        class="fixed inset-0 bg-black/50 z-[55]"
+        class="fixed inset-0 bg-black/50 z-[245]"
         onclick={minimize}
         in:fade={{ duration: 150 }}
         out:fade={{ duration: 150 }}
@@ -71,7 +81,7 @@
 
     <!-- Side Panel -->
     <div
-        class="fixed top-0 right-0 bottom-0 w-full max-w-full md:w-[min(400px,100vw)] bg-card z-[60] flex flex-col shadow-2xl border-l border-border overflow-hidden"
+        class="fixed top-0 right-0 bottom-0 w-full max-w-full md:w-[min(400px,100vw)] bg-card z-[250] flex flex-col shadow-2xl border-l border-border overflow-hidden"
         in:fly={{ x: 400, duration: 250 }}
         out:fly={{ x: 400, duration: 200 }}
     >

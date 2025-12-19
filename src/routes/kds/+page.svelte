@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { run } from 'svelte/legacy';
+
     import { orders, seats } from "$lib/stores/realtime";
     import { teachers, fetchTeachers } from "$lib/stores/teachers";
     import { supabase } from "$lib/supabase";
@@ -20,10 +22,10 @@
     import Undo2 from "lucide-svelte/icons/undo-2";
     import Circle from "lucide-svelte/icons/circle";
 
-    let now = Date.now();
+    let now = $state(Date.now());
     let interval: ReturnType<typeof setInterval>;
     let knownOrderIds = new Set<string>();
-    let initialized = false;
+    let initialized = $state(false);
     let connected = true;
     let connectionChannel: ReturnType<typeof supabase.channel> | null = null;
 
@@ -47,49 +49,8 @@
         }
     });
 
-    $: {
-        const pendingOrders = $orders.filter(
-            (o) =>
-                o.status === "pending" &&
-                o.order_items &&
-                o.order_items.length > 0,
-        );
 
-        if (!initialized && $orders.length > 0) {
-            pendingOrders.forEach((o) => knownOrderIds.add(o.id));
-            initialized = true;
-        } else if (initialized) {
-            for (const order of pendingOrders) {
-                if (!knownOrderIds.has(order.id)) {
-                    knownOrderIds.add(order.id);
-                    audioManager.play("newOrder");
-                    toast.info("New order received!", { duration: 3000 });
-                }
-            }
-        }
-    }
 
-    $: enrichedOrders = $orders.map((order) => {
-        const teacher = $teachers.find((t) => t.id === order.teacher_id);
-        const seat = $seats.find((s) => s.id === order.seat_id);
-        const elapsed = getElapsedSeconds(order.created_at, now);
-        const timeRemaining = 120 - elapsed;
-
-        return { ...order, teacher, seat, elapsed, timeRemaining };
-    });
-
-    $: activeOrders = enrichedOrders
-        .filter(
-            (o) =>
-                o.status !== "served" &&
-                o.order_items &&
-                o.order_items.length > 0,
-        )
-        .sort((a, b) => {
-            if (a.status === "ready" && b.status !== "ready") return 1;
-            if (a.status !== "ready" && b.status === "ready") return -1;
-            return a.timeRemaining - b.timeRemaining;
-        });
 
     function getElapsedSeconds(createdAt: string | null, currentTime: number) {
         if (!createdAt) return 0;
@@ -144,6 +105,47 @@
             toast.error("Failed to update order");
         }
     }
+    run(() => {
+        const pendingOrders = $orders.filter(
+            (o) =>
+                o.status === "pending" &&
+                o.order_items &&
+                o.order_items.length > 0,
+        );
+
+        if (!initialized && $orders.length > 0) {
+            pendingOrders.forEach((o) => knownOrderIds.add(o.id));
+            initialized = true;
+        } else if (initialized) {
+            for (const order of pendingOrders) {
+                if (!knownOrderIds.has(order.id)) {
+                    knownOrderIds.add(order.id);
+                    audioManager.play("newOrder");
+                    toast.info("New order received!", { duration: 3000 });
+                }
+            }
+        }
+    });
+    let enrichedOrders = $derived($orders.map((order) => {
+        const teacher = $teachers.find((t) => t.id === order.teacher_id);
+        const seat = $seats.find((s) => s.id === order.seat_id);
+        const elapsed = getElapsedSeconds(order.created_at, now);
+        const timeRemaining = 120 - elapsed;
+
+        return { ...order, teacher, seat, elapsed, timeRemaining };
+    }));
+    let activeOrders = $derived(enrichedOrders
+        .filter(
+            (o) =>
+                o.status !== "served" &&
+                o.order_items &&
+                o.order_items.length > 0,
+        )
+        .sort((a, b) => {
+            if (a.status === "ready" && b.status !== "ready") return 1;
+            if (a.status !== "ready" && b.status === "ready") return -1;
+            return a.timeRemaining - b.timeRemaining;
+        }));
 </script>
 
 <div class="flex-1 p-4 md:p-6 overflow-hidden flex flex-col max-h-full">

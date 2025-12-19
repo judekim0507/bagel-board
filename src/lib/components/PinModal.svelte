@@ -8,15 +8,19 @@
     import Delete from "lucide-svelte/icons/delete";
     import ShieldCheck from "lucide-svelte/icons/shield-check";
 
-    export let open = false;
-    export let title = "Admin Access Required";
-    export let description = "Enter the admin PIN to continue";
+    interface Props {
+        open?: boolean;
+        title?: string;
+        description?: string;
+    }
+
+    let { open = $bindable(false), title = "Admin Access Required", description = "Enter the admin PIN to continue" }: Props = $props();
 
     const dispatch = createEventDispatcher();
 
-    let pin = "";
-    let error = false;
-    let shaking = false;
+    let pin = $state("");
+    let error = $state(false);
+    let shaking = $state(false);
 
     function handleKeyPress(digit: string) {
         if (pin.length >= 4) return;
@@ -68,7 +72,7 @@
     }
 </script>
 
-<svelte:window on:keydown={handleKeyboard} />
+<svelte:window onkeydown={handleKeyboard} />
 
 <Dialog.Root bind:open onOpenChange={(isOpen) => !isOpen && handleClose()}>
     <Dialog.Content
