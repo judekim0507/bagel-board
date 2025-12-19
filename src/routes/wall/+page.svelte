@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from "svelte";
 	import gsap from "gsap";
+	import { supabase } from "$lib/supabase";
 
 	const ENABLE_FLASH = false;
 	const FLASH_DURATION = 0.5;
@@ -197,23 +198,23 @@
 	onMount(() => {
 		const cleanupInterval = setInterval(removeExpiredPhotos, 5000);
 
-		const eventSource = new EventSource("/api/wall/photos");
-		eventSource.onmessage = (event) => {
-			const data = JSON.parse(event.data);
-
-			if (data.type === "add") {
-				const photo = data.photo;
-				if (!photos.some((p) => p.id === photo.id)) {
-					addPhoto(photo.id, photo.url, photo.author);
+		const channel = supabase
+			.channel("wall-photos")
+			.on("broadcast", { event: "photo" }, ({ payload }) => {
+				if (payload.type === "add") {
+					const photo = payload.photo;
+					if (!photos.some((p) => p.id === photo.id)) {
+						addPhoto(photo.id, photo.url, photo.author);
+					}
+				} else if (payload.type === "delete") {
+					photos = photos.filter((p) => p.id !== payload.id);
 				}
-			} else if (data.type === "delete") {
-				photos = photos.filter((p) => p.id !== data.id);
-			}
-		};
+			})
+			.subscribe();
 
 		return () => {
 			clearInterval(cleanupInterval);
-			eventSource.close();
+			supabase.removeChannel(channel);
 		};
 	});
 </script>
